@@ -5,7 +5,7 @@ export default function LastNoteScreen() {
 	const theme = useTheme()
 
 	return (
-		<View>
+		<View style={{ flex: 1, padding: 12 }}>
 			<Text style={{ color: theme.colors.text }}>Last Note</Text>
 		</View>
 	)

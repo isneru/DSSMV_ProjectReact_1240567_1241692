@@ -28,6 +28,6 @@ export const WeekRow = () => {
 const styles = StyleSheet.create({
 	container: {
 		flexDirection: 'row',
-		justifyContent: 'space-between'
+		gap: 6
 	}
 })

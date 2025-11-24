@@ -78,9 +78,17 @@ export const fonts = Platform.select({
 			fontWeight: '700'
 		}
 	}
-} as const satisfies Record<string, Theme['fonts']>)
+}) as Theme['fonts']
 
-export const themes: Record<'dark' | 'light', Theme> = {
+export const sizes = {
+	sm: 12,
+	base: 16,
+	md: 18,
+	lg: 24,
+	xl: 32
+} as const
+
+export const theme: Record<'dark' | 'light', Theme> = {
 	dark: {
 		dark: true,
 		colors: colors.dark,
