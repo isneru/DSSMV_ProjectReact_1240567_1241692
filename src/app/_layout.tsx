@@ -7,29 +7,31 @@ import {
 	useSafeAreaInsets
 } from 'react-native-safe-area-context'
 import { Navbar } from '~/components'
+import { AuthProvider } from '~/lib/providers'
 import { theme } from '~/lib/theme'
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme()
 	const insets = useSafeAreaInsets()
-
 	const selectedTheme = theme[colorScheme || 'light']
 
 	return (
-		<ThemeProvider value={selectedTheme}>
-			<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-			<SafeAreaProvider
-				style={{
-					backgroundColor: selectedTheme.colors.background
-				}}>
-				<Stack
-					screenOptions={{
-						headerShown: false,
-						contentStyle: { paddingTop: insets.top }
-					}}
-				/>
-				<Navbar />
-			</SafeAreaProvider>
-		</ThemeProvider>
+		<AuthProvider>
+			<ThemeProvider value={selectedTheme}>
+				<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+				<SafeAreaProvider
+					style={{
+						backgroundColor: selectedTheme.colors.background
+					}}>
+					<Stack
+						screenOptions={{
+							headerShown: false,
+							contentStyle: { paddingTop: insets.top }
+						}}
+					/>
+					<Navbar />
+				</SafeAreaProvider>
+			</ThemeProvider>
+		</AuthProvider>
 	)
 }

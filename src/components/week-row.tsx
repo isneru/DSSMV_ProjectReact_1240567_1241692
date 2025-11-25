@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native'
-import { WeekRowDay } from '~/components'
+import { WeekRowDay } from './week-row-day'
 
 export const WeekRow = () => {
 	const today = new Date()

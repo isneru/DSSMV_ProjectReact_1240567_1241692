@@ -1,4 +1,4 @@
-import { useTheme } from '@react-navigation/native'
+import { Theme, useTheme } from '@react-navigation/native'
 import { StyleSheet, Text, View } from 'react-native'
 
 type Props = {
@@ -11,24 +11,26 @@ export const WeekRowDay = ({ monthDay, weekDay, isToday }: Props) => {
 	const theme = useTheme()
 
 	return (
-		<View
-			style={[
-				styles.container,
-				isToday && { backgroundColor: theme.colors.primary }
-			]}>
-			<Text style={{ color: theme.colors.text }}>{weekDay}</Text>
-			<Text style={{ color: theme.colors.text }}>{monthDay}</Text>
+		<View style={styles(theme, isToday).container}>
+			<Text style={styles(theme, isToday).text}>{weekDay}</Text>
+			<Text style={styles(theme, isToday).text}>{monthDay}</Text>
 		</View>
 	)
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		aspectRatio: 9 / 10,
-		borderRadius: 12,
-		flexDirection: 'column',
-		justifyContent: 'center',
-		alignItems: 'center'
-	}
-})
+const styles = (theme: Theme, isToday: boolean) => {
+	return StyleSheet.create({
+		container: {
+			flex: 1,
+			borderRadius: 8,
+			flexDirection: 'column',
+			justifyContent: 'center',
+			alignItems: 'center',
+			minHeight: 44,
+			backgroundColor: isToday ? theme.colors.primary : undefined
+		},
+		text: {
+			color: theme.colors.text
+		}
+	})
+}

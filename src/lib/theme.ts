@@ -3,20 +3,20 @@ import { Platform } from 'react-native'
 
 export const colors = {
 	light: {
-		primary: '#a684ff',
-		background: '#FFFFFF',
-		card: '#F2F2F2',
-		text: '#000000',
-		border: '#C7C7CC',
-		notification: '#FF3B30'
+		primary: 'rgb(166, 132, 255)',
+		background: 'rgb(255, 255, 255)',
+		card: 'rgb(242, 242, 242)',
+		text: 'rgb(0, 0, 0)',
+		border: 'rgb(199, 199, 204)',
+		notification: 'rgb(255, 59, 48)'
 	},
 	dark: {
-		primary: '#8e51ff',
-		background: '#010101',
-		card: '#121212',
-		text: '#E5E5E7',
-		border: '#272729',
-		notification: '#FF453A'
+		primary: 'rgb(142, 81, 255)',
+		background: 'rgb(1, 1, 1)',
+		card: 'rgb(18, 18, 18)',
+		text: 'rgb(229, 229, 231)',
+		border: 'rgb(39, 39, 41)',
+		notification: 'rgb(255, 69, 58)'
 	}
 }
 
@@ -86,7 +86,7 @@ export const sizes = {
 	md: 18,
 	lg: 24,
 	xl: 32
-} as const
+}
 
 export const theme: Record<'dark' | 'light', Theme> = {
 	dark: {
