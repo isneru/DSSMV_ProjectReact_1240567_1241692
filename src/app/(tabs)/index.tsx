@@ -1,13 +1,14 @@
 import { Theme, useTheme } from '@react-navigation/native'
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { NoteLink, WeekRow } from '~/components'
-import { notes } from '~/lib/mock'
-import { useAuth } from '~/lib/providers'
+import { useAuth } from '~/lib/providers/auth-provider'
+import { useNotes } from '~/lib/providers/notes-provider'
 import { sizes } from '~/lib/theme'
 
 export default function Index() {
 	const theme = useTheme()
 	const { session } = useAuth()
+	const { notes, isLoading, getNotes } = useNotes()
 
 	return (
 		<View style={styles(theme).container}>
@@ -30,7 +31,13 @@ export default function Index() {
 				renderItem={({ item }) => <NoteLink note={item} />}
 				showsVerticalScrollIndicator={false}
 				refreshControl={
-					<RefreshControl refreshing={false} onRefresh={() => {}} />
+					<RefreshControl
+						refreshing={isLoading}
+						tintColor={theme.colors.background}
+						progressBackgroundColor={theme.colors.primary}
+						colors={[theme.colors.background]}
+						onRefresh={getNotes}
+					/>
 				}
 			/>
 		</View>

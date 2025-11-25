@@ -1,0 +1,68 @@
+import * as SQLite from 'expo-sqlite'
+import type { Note } from '~/lib/types'
+
+const db = SQLite.openDatabaseSync('notes.db')
+
+export const initDb = () => {
+	db.execSync(`
+    CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY NOT NULL,
+      userId TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      priority INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      projectId TEXT NOT NULL,
+      due TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS pending_deletions (
+      id TEXT PRIMARY KEY NOT NULL
+    );
+  `)
+}
+
+export const getNotes = (): Note[] => {
+	const result = db.getAllSync('SELECT * FROM notes')
+	return result.map((row: any) => ({
+		...row,
+		due: row.due ? JSON.parse(row.due) : null
+	}))
+}
+
+export const saveNote = (note: Note) => {
+	db.runSync(
+		`INSERT OR REPLACE INTO notes (id, userId, title, content, priority, label, projectId, due) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		[
+			note.id,
+			note.userId,
+			note.title,
+			note.content,
+			note.priority,
+			note.label,
+			note.projectId,
+			JSON.stringify(note.due)
+		]
+	)
+}
+
+export const deleteNote = (id: string) => {
+	db.runSync('DELETE FROM notes WHERE id = ?', [id])
+}
+
+export const clearNotes = () => {
+	db.runSync('DELETE FROM notes')
+}
+
+export const addPendingDeletion = (id: string) => {
+	db.runSync('INSERT OR IGNORE INTO pending_deletions (id) VALUES (?)', [id])
+}
+
+export const getPendingDeletions = (): string[] => {
+	const result = db.getAllSync('SELECT id FROM pending_deletions')
+	return result.map((row: any) => row.id)
+}
+
+export const removePendingDeletion = (id: string) => {
+	db.runSync('DELETE FROM pending_deletions WHERE id = ?', [id])
+}

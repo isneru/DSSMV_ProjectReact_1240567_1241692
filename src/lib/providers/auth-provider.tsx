@@ -7,11 +7,11 @@ import * as SecureStore from 'expo-secure-store'
 import * as WebBrowser from 'expo-web-browser'
 import {
 	createContext,
+	ReactNode,
 	useCallback,
 	useContext,
 	useEffect,
-	useState,
-	type JSX
+	useState
 } from 'react'
 import type { Session } from '~/lib/types'
 
@@ -24,7 +24,7 @@ const endpoints = {
 const SESSION_KEY = 'session'
 
 type AuthProviderProps = {
-	children: JSX.Element
+	children: ReactNode
 }
 
 type AuthContextType = {

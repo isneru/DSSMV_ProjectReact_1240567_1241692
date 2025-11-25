@@ -1,12 +1,13 @@
 import { useTheme, type Theme } from '@react-navigation/native'
 import { useLocalSearchParams } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
-import { notes } from '~/lib/mock'
+import { useNotes } from '~/lib/providers/notes-provider'
 import { sizes } from '~/lib/theme'
 
 export default function NoteScreen() {
 	const theme = useTheme()
 	const { id } = useLocalSearchParams<{ id: string }>()
+	const { notes } = useNotes()
 
 	const note = notes.find(note => note.id === id)
 

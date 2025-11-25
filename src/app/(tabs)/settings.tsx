@@ -1,6 +1,6 @@
 import { useTheme } from '@react-navigation/native'
 import { Button, Text, View } from 'react-native'
-import { useAuth } from '~/lib/providers'
+import { useAuth } from '~/lib/providers/auth-provider'
 
 export default function SettingsScreen() {
 	const theme = useTheme()
