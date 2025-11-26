@@ -5,7 +5,7 @@ type AlertContextType = {
 	showAlert: (title: string, message?: string, buttons?: AlertButton[]) => void
 }
 
-const AlertContext = createContext<AlertContextType | undefined>(undefined)
+const AlertContext = createContext<AlertContextType>({} as AlertContextType)
 
 export const AlertProvider = ({ children }: { children: ReactNode }) => {
 	const [visible, setVisible] = useState(false)

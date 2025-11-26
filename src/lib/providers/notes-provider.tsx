@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto'
+import * as LocalStorage from 'expo-secure-store'
 import {
 	createContext,
 	ReactNode,
@@ -25,6 +26,8 @@ type NotesProviderProps = {
 }
 
 type NotesContextType = {
+	lastAccessedNoteId: string | null
+	setLastAccessedNoteId?: (id: string | null) => void
 	notes: Note[]
 	isLoading: boolean
 	getNotes: () => Promise<void>
@@ -43,15 +46,34 @@ const BASE_URL = 'https://todoist.com/api/v1/'
 export const NotesProvider = ({ children }: NotesProviderProps) => {
 	const { session, status } = useAuth()
 	const [notes, setNotes] = useState<Note[]>([])
-	const [isLoading, setIsLoading] = useState(true)
+	const [lastAccessedNoteId, setLastAccessedNoteId] = useState<string | null>(
+		null
+	)
+	const [isLoading, setIsLoading] = useState(false)
 
 	// initialize DB and load local notes
 	useEffect(() => {
+		setIsLoading(true)
 		initDb()
 		const localNotes = getNotesDb()
 		setNotes(localNotes)
 		setIsLoading(false)
+
+		LocalStorage.getItemAsync('lastAccessedNoteId').then(id => {
+			if (id) {
+				setLastAccessedNoteId(id)
+			}
+		})
 	}, [])
+
+	useEffect(() => {
+		// make localstore be in sync with lastAccessedNoteId
+		if (lastAccessedNoteId) {
+			LocalStorage.setItemAsync('lastAccessedNoteId', lastAccessedNoteId)
+		} else {
+			LocalStorage.deleteItemAsync('lastAccessedNoteId')
+		}
+	}, [lastAccessedNoteId])
 
 	const fetchWithAuth = useCallback(
 		async (endpoint: string, options: RequestInit = {}) => {
@@ -97,19 +119,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				JSON.stringify(responseData, null, 2)
 			)
 
-			let todoistNotes: TodoistNote[] = []
-			if (Array.isArray(responseData)) {
-				todoistNotes = responseData
-			} else if (responseData && Array.isArray(responseData.tasks)) {
-				todoistNotes = responseData.tasks
-			} else if (responseData && Array.isArray(responseData.items)) {
-				todoistNotes = responseData.items
-			} else if (responseData && Array.isArray(responseData.results)) {
-				todoistNotes = responseData.results
-			} else {
-				console.warn('Unexpected API response structure:', responseData)
-				todoistNotes = []
-			}
+			const todoistNotes: TodoistNote[] = responseData.results ?? []
 
 			// map todoist notes to app notes
 			const mappedNotes: Note[] = todoistNotes.map(item => ({
@@ -205,6 +215,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	}, [status, getNotes, syncLocalNotes, syncDeletions])
 
 	const addNote = async (note: Partial<Note>) => {
+		setIsLoading(true)
 		try {
 			if (session?.accessToken) {
 				// optimistic update could go here
@@ -242,10 +253,13 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			}
 		} catch (error) {
 			console.error('Failed to add note:', error)
+		} finally {
+			setIsLoading(false)
 		}
 	}
 
 	const updateNote = async (id: string, note: Partial<Note>) => {
+		setIsLoading(true)
 		try {
 			if (session?.accessToken) {
 				const body = {
@@ -275,12 +289,19 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 					return updatedNotes
 				})
 			}
+
+			if (lastAccessedNoteId !== id) {
+				setLastAccessedNoteId(id)
+			}
 		} catch (error) {
 			console.error('Failed to update note:', error)
+		} finally {
+			setIsLoading(false)
 		}
 	}
 
 	const deleteNote = async (id: string) => {
+		setIsLoading(true)
 		try {
 			if (session?.accessToken) {
 				await fetchWithAuth(`tasks/${id}`, {
@@ -301,17 +322,25 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 					addPendingDeletion(id)
 				}
 			}
+
+			if (lastAccessedNoteId === id) {
+				setLastAccessedNoteId(null)
+			}
 		} catch (error) {
 			console.error('Failed to delete note:', error)
 			if (session?.accessToken) {
 				await getNotes() // re-sync on error
 			}
+		} finally {
+			setIsLoading(false)
 		}
 	}
 
 	return (
 		<NotesContext.Provider
 			value={{
+				lastAccessedNoteId,
+				setLastAccessedNoteId,
 				notes,
 				isLoading,
 				getNotes,
@@ -326,5 +355,9 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 }
 
 export function useNotes() {
-	return useContext(NotesContext)
+	const context = useContext(NotesContext)
+	if (!context) {
+		throw new Error('useNotes must be used within a NotesProvider')
+	}
+	return context
 }

@@ -9,6 +9,7 @@ import {
 import { AlertProvider } from '~/lib/providers/alert-provider'
 import { AuthProvider } from '~/lib/providers/auth-provider'
 import { NotesProvider } from '~/lib/providers/notes-provider'
+import { WeatherProvider } from '~/lib/providers/weather-provider'
 import { theme } from '~/lib/theme'
 
 export default function RootLayout() {
@@ -18,30 +19,35 @@ export default function RootLayout() {
 
 	return (
 		<AuthProvider>
-			<NotesProvider>
+			<WeatherProvider>
 				<ThemeProvider value={selectedTheme}>
 					<AlertProvider>
-						<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-						<SafeAreaProvider
-							style={{
-								backgroundColor: selectedTheme.colors.background
-							}}>
-							<Stack
-								screenOptions={{
-									headerShown: false,
-									contentStyle: { paddingTop: insets.top }
+						<NotesProvider>
+							<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+							<SafeAreaProvider
+								style={{
+									backgroundColor: selectedTheme.colors.background
 								}}>
-								<Stack.Screen
-									name='note/new'
-									options={{
-										presentation: 'modal'
-									}}
-								/>
-							</Stack>
-						</SafeAreaProvider>
+								<Stack
+									screenOptions={{
+										headerShown: false,
+										contentStyle: {
+											paddingTop: insets.top,
+											paddingBottom: insets.bottom
+										}
+									}}>
+									<Stack.Screen
+										name='note/new'
+										options={{
+											presentation: 'modal'
+										}}
+									/>
+								</Stack>
+							</SafeAreaProvider>
+						</NotesProvider>
 					</AlertProvider>
 				</ThemeProvider>
-			</NotesProvider>
+			</WeatherProvider>
 		</AuthProvider>
 	)
 }

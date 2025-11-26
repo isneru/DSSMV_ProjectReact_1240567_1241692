@@ -40,7 +40,19 @@
 				}
 			],
 			"expo-secure-store",
-			"expo-sqlite"
+			"expo-sqlite",
+			[
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID."
+        }
+      ],
+			[
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ]
 		],
 		"experiments": {
 			"typedRoutes": true,

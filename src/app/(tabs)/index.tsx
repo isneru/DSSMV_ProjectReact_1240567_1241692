@@ -3,12 +3,14 @@ import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { NoteLink, WeekRow } from '~/components'
 import { useAuth } from '~/lib/providers/auth-provider'
 import { useNotes } from '~/lib/providers/notes-provider'
+import { useWeather } from '~/lib/providers/weather-provider'
 import { sizes } from '~/lib/theme'
 
 export default function Index() {
-	const theme = useTheme()
-	const { session } = useAuth()
 	const { notes, isLoading, getNotes } = useNotes()
+	const { session } = useAuth()
+	const theme = useTheme()
+	const { isLoading: isWeatherLoading, weather } = useWeather()
 
 	return (
 		<View style={styles(theme).container}>
@@ -20,8 +22,10 @@ export default function Index() {
 					</Text>
 				</View>
 				<View style={styles(theme).weather}>
-					<Text style={styles(theme).textWeather}>25</Text>
-					<Text style={styles(theme).textWeather}>Porto</Text>
+					<Text style={styles(theme).textWeather}>
+						{`${weather?.temperature}°`}
+					</Text>
+					<Text style={styles(theme).textWeather}>{weather?.city}</Text>
 				</View>
 			</View>
 			<WeekRow />
