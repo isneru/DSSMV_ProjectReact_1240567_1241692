@@ -1,5 +1,16 @@
 import { Theme, useTheme } from '@react-navigation/native'
 import {
+	CloudFogIcon,
+	CloudIcon,
+	CloudLightningIcon,
+	CloudRainIcon,
+	CloudSnowIcon,
+	CloudSunIcon,
+	SunIcon,
+	WindIcon,
+	type Icon
+} from 'phosphor-react-native'
+import {
 	ActivityIndicator,
 	StyleSheet,
 	Text,
@@ -9,15 +20,47 @@ import {
 import { useWeather } from '~/lib/providers/weather-provider'
 import { sizes } from '~/lib/theme'
 
+const weatherIcons: Record<string, Icon> = {
+	Clear: SunIcon,
+	Clouds: CloudIcon,
+	Rain: CloudRainIcon,
+	Drizzle: CloudRainIcon,
+	Thunderstorm: CloudLightningIcon,
+	Snow: CloudSnowIcon,
+	Mist: CloudFogIcon,
+	Smoke: CloudFogIcon,
+	Haze: CloudFogIcon,
+	Dust: CloudFogIcon,
+	Fog: CloudFogIcon,
+	Sand: WindIcon,
+	Ash: CloudFogIcon,
+	Squall: WindIcon,
+	Tornado: WindIcon
+}
+
 export const WeatherWidget = () => {
 	const { weather, refetch, isLoading } = useWeather()
 	const theme = useTheme()
 
+	const CurrentIcon = weather?.condition
+		? weatherIcons[weather.condition] || CloudSunIcon
+		: CloudSunIcon
+
 	return (
 		<TouchableWithoutFeedback onPress={refetch} disabled={isLoading}>
 			<View style={styles(theme).weather}>
-				<Text style={styles(theme).textTemp}>{`${weather?.temperature}°`}</Text>
-				<Text style={styles(theme).textWeather}>{weather?.city}</Text>
+				<View style={styles(theme).contentContainer}>
+					<CurrentIcon color={theme.colors.text} size={24} weight='regular' />
+					<View>
+						<Text style={styles(theme).textTemp}>
+							{weather?.temperature ? `${weather.temperature}°` : '--'}
+						</Text>
+						<Text style={styles(theme).textCity}>
+							{weather?.city || 'Loading...'}
+						</Text>
+					</View>
+				</View>
+
 				{isLoading && (
 					<ActivityIndicator
 						style={styles(theme).loading}
@@ -33,13 +76,20 @@ export const WeatherWidget = () => {
 const styles = (theme: Theme) => {
 	return StyleSheet.create({
 		weather: {
-			borderRadius: 8,
+			borderRadius: 12,
 			paddingVertical: 8,
 			paddingHorizontal: 12,
 			backgroundColor: theme.colors.card,
 			borderColor: theme.colors.border,
 			borderWidth: 1,
-			position: 'relative'
+			position: 'relative',
+			minWidth: 100,
+			justifyContent: 'center'
+		},
+		contentContainer: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8
 		},
 		loading: {
 			backgroundColor: theme.colors.card,
@@ -50,16 +100,19 @@ const styles = (theme: Theme) => {
 			bottom: 0,
 			justifyContent: 'center',
 			alignItems: 'center',
-			borderRadius: 8
+			borderRadius: 12,
+			opacity: 0.8
 		},
 		textTemp: {
 			color: theme.colors.text,
 			fontSize: sizes.md,
-			fontWeight: 'bold'
+			fontWeight: 'bold',
+			lineHeight: 20
 		},
-		textWeather: {
+		textCity: {
 			color: theme.colors.text,
-			fontSize: sizes.md - 2
+			fontSize: sizes.sm,
+			opacity: 0.7
 		}
 	})
 }
