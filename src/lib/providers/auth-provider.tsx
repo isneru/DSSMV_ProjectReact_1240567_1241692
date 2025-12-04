@@ -11,7 +11,7 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
-	useState
+	useReducer
 } from 'react'
 import type { Session } from '~/lib/types'
 
@@ -22,6 +22,37 @@ const endpoints = {
 }
 
 const SESSION_KEY = 'session'
+
+type AuthState = {
+	session: Session | null | undefined
+	status: 'loading' | 'authenticated' | 'unauthenticated'
+}
+
+type AuthAction =
+	| { type: 'SET_LOADING' }
+	| { type: 'SET_UNAUTHENTICATED' }
+	| { type: 'SIGN_IN'; payload: Session }
+	| { type: 'SIGN_OUT' }
+
+const INITIAL_STATE: AuthState = {
+	session: null,
+	status: 'loading'
+}
+
+const authReducer = (state: AuthState, action: AuthAction): AuthState => {
+	switch (action.type) {
+		case 'SET_LOADING':
+			return { ...state, status: 'loading' }
+		case 'SET_UNAUTHENTICATED':
+			return { ...state, status: 'unauthenticated', session: null }
+		case 'SIGN_IN':
+			return { ...state, status: 'authenticated', session: action.payload }
+		case 'SIGN_OUT':
+			return { ...state, status: 'unauthenticated', session: null }
+		default:
+			return state
+	}
+}
 
 type AuthProviderProps = {
 	children: ReactNode
@@ -39,18 +70,16 @@ export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 export const AuthProvider = ({ children }: AuthProviderProps) => {
 	WebBrowser.maybeCompleteAuthSession()
 
-	const [session, setSession] = useState<AuthContextType['session']>(null)
-	const [status, setStatus] = useState<AuthContextType['status']>('loading')
+	const [{ session, status }, dispatch] = useReducer(authReducer, INITIAL_STATE)
 
 	useEffect(() => {
 		SecureStore.getItemAsync(SESSION_KEY).then(sessionJson => {
 			if (!sessionJson) {
-				setStatus('unauthenticated')
+				dispatch({ type: 'SET_UNAUTHENTICATED' })
 				return
 			}
 
-			setSession(JSON.parse(sessionJson))
-			setStatus('authenticated')
+			dispatch({ type: 'SIGN_IN', payload: JSON.parse(sessionJson) })
 		})
 	}, [])
 
@@ -87,18 +116,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				accessToken
 			}
 
-			setSession(newSession)
 			await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
-			setStatus('authenticated')
+			dispatch({ type: 'SIGN_IN', payload: newSession })
 		} catch (error) {
 			console.error('Failed to fetch user profile', error)
-			setStatus('unauthenticated')
+			dispatch({ type: 'SET_UNAUTHENTICATED' })
 		}
 	}, [])
 
 	const exchangeCodeForToken = useCallback(
 		async (code: string) => {
-			setStatus('loading')
+			dispatch({ type: 'SET_LOADING' })
 			try {
 				const tokenResponse = await fetch(endpoints.token, {
 					method: 'POST',
@@ -119,7 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 				if (!tokenData.access_token) {
 					console.error('No access token in response', tokenData)
-					setStatus('unauthenticated')
+					dispatch({ type: 'SET_UNAUTHENTICATED' })
 
 					return
 				}
@@ -127,7 +155,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				await fetchUserProfile(tokenData.access_token)
 			} catch (error) {
 				console.error('Token exchange failed', error)
-				setStatus('unauthenticated')
+				dispatch({ type: 'SET_UNAUTHENTICATED' })
 			}
 		},
 		[fetchUserProfile]
@@ -136,7 +164,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	useEffect(() => {
 		if (authResponse?.type === 'error') {
 			console.error('Auth error:', authResponse.error)
-			setStatus('unauthenticated')
+			dispatch({ type: 'SET_UNAUTHENTICATED' })
 
 			return
 		}
@@ -154,9 +182,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 	function logout() {
 		if (status === 'loading') return
-		setSession(null)
-		setStatus('unauthenticated')
 		SecureStore.deleteItemAsync(SESSION_KEY)
+		dispatch({ type: 'SIGN_OUT' })
 	}
 
 	return (

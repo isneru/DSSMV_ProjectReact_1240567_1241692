@@ -6,7 +6,7 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
-	useState
+	useReducer
 } from 'react'
 import {
 	addPendingDeletion,
@@ -20,6 +20,47 @@ import {
 } from '~/lib/db'
 import { useAuth } from '~/lib/providers/auth-provider'
 import type { Note, TodoistNote, TodoistUser } from '~/lib/types'
+
+type NotesState = {
+	notes: Note[]
+	lastAccessedNoteId: string | null
+	isLoading: boolean
+}
+
+type NotesAction =
+	| { type: 'SET_LOADING'; payload: boolean }
+	| { type: 'SET_NOTES'; payload: Note[] }
+	| { type: 'SET_LAST_ACCESSED'; payload: string | null }
+	| { type: 'ADD_NOTE'; payload: Note }
+	| { type: 'UPDATE_NOTE'; payload: { id: string; note: Partial<Note> } }
+	| { type: 'DELETE_NOTE'; payload: string }
+
+const notesReducer = (state: NotesState, action: NotesAction): NotesState => {
+	switch (action.type) {
+		case 'SET_LOADING':
+			return { ...state, isLoading: action.payload }
+		case 'SET_NOTES':
+			return { ...state, notes: action.payload }
+		case 'SET_LAST_ACCESSED':
+			return { ...state, lastAccessedNoteId: action.payload }
+		case 'ADD_NOTE':
+			return { ...state, notes: [...state.notes, action.payload] }
+		case 'UPDATE_NOTE':
+			return {
+				...state,
+				notes: state.notes.map(n =>
+					n.id === action.payload.id ? { ...n, ...action.payload.note } : n
+				)
+			}
+		case 'DELETE_NOTE':
+			return {
+				...state,
+				notes: state.notes.filter(n => n.id !== action.payload)
+			}
+		default:
+			return state
+	}
+}
 
 type NotesProviderProps = {
 	children: ReactNode
@@ -43,25 +84,30 @@ export const NotesContext = createContext<NotesContextType>(
 
 const BASE_URL = 'https://todoist.com/api/v1/'
 
+const INITIAL_STATE: NotesState = {
+	notes: [],
+	lastAccessedNoteId: null,
+	isLoading: false
+}
+
 export const NotesProvider = ({ children }: NotesProviderProps) => {
 	const { session, status } = useAuth()
-	const [notes, setNotes] = useState<Note[]>([])
-	const [lastAccessedNoteId, setLastAccessedNoteId] = useState<string | null>(
-		null
+	const [{ notes, lastAccessedNoteId, isLoading }, dispatch] = useReducer(
+		notesReducer,
+		INITIAL_STATE
 	)
-	const [isLoading, setIsLoading] = useState(false)
 
 	// initialize DB and load local notes
 	useEffect(() => {
-		setIsLoading(true)
+		dispatch({ type: 'SET_LOADING', payload: true })
 		initDb()
 		const localNotes = getNotesDb()
-		setNotes(localNotes)
-		setIsLoading(false)
+		dispatch({ type: 'SET_NOTES', payload: localNotes })
+		dispatch({ type: 'SET_LOADING', payload: false })
 
 		LocalStorage.getItemAsync('lastAccessedNoteId').then(id => {
 			if (id) {
-				setLastAccessedNoteId(id)
+				dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
 			}
 		})
 	}, [])
@@ -111,14 +157,9 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	}, [fetchWithAuth])
 
 	const getNotes = useCallback(async () => {
-		setIsLoading(true)
+		dispatch({ type: 'SET_LOADING', payload: true })
 		try {
 			const responseData = await fetchWithAuth('tasks')
-			console.log(
-				'API Response for tasks:',
-				JSON.stringify(responseData, null, 2)
-			)
-
 			const todoistNotes: TodoistNote[] = responseData.results ?? []
 
 			// map todoist notes to app notes
@@ -143,11 +184,11 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			// update local db
 			clearNotes() // clear local to avoid duplicates if ids changed or deletions happened outside
 			mappedNotes.forEach(note => saveNote(note))
-			setNotes(mappedNotes)
+			dispatch({ type: 'SET_NOTES', payload: mappedNotes })
 		} catch (error) {
 			console.error('Failed to get notes:', error)
 		} finally {
-			setIsLoading(false)
+			dispatch({ type: 'SET_LOADING', payload: false })
 		}
 	}, [fetchWithAuth])
 
@@ -215,7 +256,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	}, [status, getNotes, syncLocalNotes, syncDeletions])
 
 	const addNote = async (note: Partial<Note>) => {
-		setIsLoading(true)
+		dispatch({ type: 'SET_LOADING', payload: true })
 		try {
 			if (session?.accessToken) {
 				// optimistic update could go here
@@ -249,17 +290,17 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 					}
 				}
 				saveNote(newNote)
-				setNotes(prev => [...prev, newNote])
+				dispatch({ type: 'ADD_NOTE', payload: newNote })
 			}
 		} catch (error) {
 			console.error('Failed to add note:', error)
 		} finally {
-			setIsLoading(false)
+			dispatch({ type: 'SET_LOADING', payload: false })
 		}
 	}
 
 	const updateNote = async (id: string, note: Partial<Note>) => {
-		setIsLoading(true)
+		dispatch({ type: 'SET_LOADING', payload: true })
 		try {
 			if (session?.accessToken) {
 				const body = {
@@ -277,31 +318,26 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				await getNotes() // refresh list
 			} else {
 				// local update
-				setNotes(prev => {
-					const updatedNotes = prev.map(n => {
-						if (n.id === id) {
-							const updated = { ...n, ...note }
-							saveNote(updated) // update db
-							return updated
-						}
-						return n
-					})
-					return updatedNotes
-				})
+				const currentNote = notes.find(n => n.id === id)
+				if (currentNote) {
+					saveNote({ ...currentNote, ...note })
+				}
+
+				dispatch({ type: 'UPDATE_NOTE', payload: { id, note } })
 			}
 
 			if (lastAccessedNoteId !== id) {
-				setLastAccessedNoteId(id)
+				dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
 			}
 		} catch (error) {
 			console.error('Failed to update note:', error)
 		} finally {
-			setIsLoading(false)
+			dispatch({ type: 'SET_LOADING', payload: false })
 		}
 	}
 
 	const deleteNote = async (id: string) => {
-		setIsLoading(true)
+		dispatch({ type: 'SET_LOADING', payload: true })
 		try {
 			if (session?.accessToken) {
 				await fetchWithAuth(`tasks/${id}`, {
@@ -309,11 +345,11 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				})
 
 				// remove from local state immediately for better UX
-				setNotes(prev => prev.filter(n => n.id !== id))
+				dispatch({ type: 'DELETE_NOTE', payload: id })
 				deleteNoteDb(id)
 			} else {
 				// local delete
-				setNotes(prev => prev.filter(n => n.id !== id))
+				dispatch({ type: 'DELETE_NOTE', payload: id })
 				deleteNoteDb(id)
 
 				// If it's a server note (not local-only), track pending deletion
@@ -324,7 +360,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			}
 
 			if (lastAccessedNoteId === id) {
-				setLastAccessedNoteId(null)
+				dispatch({ type: 'SET_LAST_ACCESSED', payload: null })
 			}
 		} catch (error) {
 			console.error('Failed to delete note:', error)
@@ -332,8 +368,12 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				await getNotes() // re-sync on error
 			}
 		} finally {
-			setIsLoading(false)
+			dispatch({ type: 'SET_LOADING', payload: false })
 		}
+	}
+
+	const setLastAccessedNoteId = (id: string | null) => {
+		dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
 	}
 
 	return (
