@@ -5,7 +5,7 @@ import {
 	NewspaperIcon,
 	PencilIcon
 } from 'phosphor-react-native'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
 	Linking,
 	StyleSheet,
@@ -19,16 +19,34 @@ import { sizes } from '~/lib/theme'
 
 export default function NoteScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>()
-	const { notes, updateNote, isLoading } = useNotes()
+	const { notes, updateNote, isLoading, setLastAccessedNoteId } = useNotes()
 	const router = useRouter()
 	const theme = useTheme()
 
 	const note = notes.find(note => note.id === id)
-	if (!note) router.replace('/')
+
+	useEffect(() => {
+		if (!note) {
+			router.replace('/')
+		}
+	}, [note, router])
 
 	const [isEditing, setIsEditing] = useState(false)
 	const [content, setContent] = useState(note?.content ?? '')
 	const [title, setTitle] = useState(note?.title ?? '')
+
+	useEffect(() => {
+		if (id) {
+			setLastAccessedNoteId(id)
+		}
+	}, [id, setLastAccessedNoteId])
+
+	useEffect(() => {
+		if (note) {
+			setTitle(note.title)
+			setContent(note.content)
+		}
+	}, [note])
 
 	async function handleSaveNoteClick() {
 		if (!note) return

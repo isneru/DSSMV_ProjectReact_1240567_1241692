@@ -1,16 +1,14 @@
 import { Theme, useTheme } from '@react-navigation/native'
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
-import { NoteLink, WeekRow } from '~/components'
+import { NoteLink, WeatherWidget, WeekRow } from '~/components'
 import { useAuth } from '~/lib/providers/auth-provider'
 import { useNotes } from '~/lib/providers/notes-provider'
-import { useWeather } from '~/lib/providers/weather-provider'
 import { sizes } from '~/lib/theme'
 
 export default function Index() {
 	const { notes, isLoading, getNotes } = useNotes()
 	const { session } = useAuth()
 	const theme = useTheme()
-	const { isLoading: isWeatherLoading, weather } = useWeather()
 
 	return (
 		<View style={styles(theme).container}>
@@ -21,12 +19,7 @@ export default function Index() {
 						{session?.user.name ?? 'Local user'}
 					</Text>
 				</View>
-				<View style={styles(theme).weather}>
-					<Text style={styles(theme).textWeather}>
-						{`${weather?.temperature}°`}
-					</Text>
-					<Text style={styles(theme).textWeather}>{weather?.city}</Text>
-				</View>
+				<WeatherWidget />
 			</View>
 			<WeekRow />
 			<FlatList
@@ -63,19 +56,7 @@ const styles = (theme: Theme) => {
 			paddingVertical: 8,
 			paddingHorizontal: 12
 		},
-		weather: {
-			borderRadius: 8,
-			paddingVertical: 8,
-			paddingHorizontal: 12,
-			backgroundColor: theme.colors.card,
-			borderColor: theme.colors.border,
-			borderWidth: 1
-		},
 		textGreet: {
-			color: theme.colors.text,
-			fontSize: sizes.md
-		},
-		textWeather: {
 			color: theme.colors.text,
 			fontSize: sizes.md
 		}

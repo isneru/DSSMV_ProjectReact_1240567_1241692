@@ -27,7 +27,7 @@ type NotesProviderProps = {
 
 type NotesContextType = {
 	lastAccessedNoteId: string | null
-	setLastAccessedNoteId?: (id: string | null) => void
+	setLastAccessedNoteId: (id: string | null) => void
 	notes: Note[]
 	isLoading: boolean
 	getNotes: () => Promise<void>

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { type MaterialTopTabBarProps } from '@react-navigation/material-top-tabs'
 import { type Theme, useTheme } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
-import { GearSixIcon, HouseIcon } from 'phosphor-react-native'
+import { Fragment } from 'react'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 
@@ -18,19 +18,16 @@ export const Navbar = ({
 	descriptors,
 	navigation
 }: MaterialTopTabBarProps) => {
-	const router = useRouter()
 	const theme = useTheme()
+	const router = useRouter()
 
-	const links = [
-		{
-			name: 'index',
-			icon: HouseIcon
-		},
-		{
-			name: 'settings',
-			icon: GearSixIcon
-		}
-	]
+	const currentRoute = state.routes[state.index]
+	const { options } = descriptors[currentRoute.key]
+	const tabBarStyle = options.tabBarStyle as { display?: string }
+
+	if (tabBarStyle?.display === 'none') {
+		return null
+	}
 
 	const getPath = () => {
 		const navWidth = width - MARGIN * 2
@@ -78,20 +75,6 @@ export const Navbar = ({
 
 	const navWidth = width - MARGIN * 2
 
-	const onTabPress = (routeIndex: number, routeName: string) => {
-		const isFocused = state.index === routeIndex
-
-		const event = navigation.emit({
-			type: 'tabPress',
-			target: state.routes[routeIndex].key,
-			canPreventDefault: true
-		})
-
-		if (!isFocused && !event.defaultPrevented) {
-			navigation.navigate(routeName)
-		}
-	}
-
 	return (
 		<View style={styles(theme).container}>
 			<View style={styles(theme).backgroundContainer}>
@@ -114,18 +97,33 @@ export const Navbar = ({
 					</TouchableOpacity>
 				</View>
 
-				{links.map((link, index) => (
-					<TouchableOpacity
-						key={index}
-						onPress={() => onTabPress(index, link.name)}
-						style={styles(theme).button}>
-						<link.icon
-							weight={state.index === index ? 'fill' : 'regular'}
-							size={20}
-							color={theme.colors.text}
-						/>
-					</TouchableOpacity>
-				))}
+				{state.routes.map((route, index) => {
+					const { options } = descriptors[route.key]
+					const isFocused = state.index === index
+
+					const onPress = () => {
+						const event = navigation.emit({
+							type: 'tabPress',
+							target: route.key,
+							canPreventDefault: true
+						})
+
+						if (!isFocused && !event.defaultPrevented) {
+							navigation.navigate(route.name, route.params)
+						}
+					}
+
+					const Icon = options.tabBarIcon
+
+					return (
+						<Fragment key={route.key}>
+							<TouchableOpacity onPress={onPress} style={styles(theme).button}>
+								{Icon && <Icon focused={isFocused} color={theme.colors.text} />}
+							</TouchableOpacity>
+							{index === 1 && <View style={{ width: 40 }} />}
+						</Fragment>
+					)
+				})}
 			</View>
 		</View>
 	)
