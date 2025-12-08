@@ -255,126 +255,135 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 		// don't clear notes on unauthenticated to allow local usage
 	}, [status, getNotes, syncLocalNotes, syncDeletions])
 
-	const addNote = async (note: Partial<Note>) => {
-		dispatch({ type: 'SET_LOADING', payload: true })
-		try {
-			if (session?.accessToken) {
-				// optimistic update could go here
-				const body = {
-					content: note.title,
-					description: note.content,
-					priority: note.priority,
-					due_string: note.due?.dueString
+	const addNote = useCallback(
+		async (note: Partial<Note>) => {
+			dispatch({ type: 'SET_LOADING', payload: true })
+			try {
+				if (session?.accessToken) {
+					// optimistic update could go here
+					const body = {
+						content: note.title,
+						description: note.content,
+						priority: note.priority,
+						due_string: note.due?.dueString
+					}
+
+					await fetchWithAuth('tasks', {
+						method: 'POST',
+						body: JSON.stringify(body)
+					})
+
+					await getNotes() // refresh list
+				} else {
+					// local only
+					const newNote: Note = {
+						id: Crypto.randomUUID(),
+						userId: 'local',
+						title: note.title ?? '',
+						content: note.content ?? '',
+						priority: note.priority ?? 1,
+						label: note.label ?? 'Uncategorized',
+						projectId: 'local',
+						due: note.due ?? {
+							dateOnly: '',
+							dateTime: '',
+							dueString: ''
+						}
+					}
+					saveNote(newNote)
+					dispatch({ type: 'ADD_NOTE', payload: newNote })
+				}
+			} catch (error) {
+				console.error('Failed to add note:', error)
+			} finally {
+				dispatch({ type: 'SET_LOADING', payload: false })
+			}
+		},
+		[session?.accessToken, fetchWithAuth, getNotes]
+	)
+
+	const updateNote = useCallback(
+		async (id: string, note: Partial<Note>) => {
+			dispatch({ type: 'SET_LOADING', payload: true })
+			try {
+				if (session?.accessToken) {
+					const body = {
+						content: note.title,
+						description: note.content,
+						priority: note.priority,
+						due_string: note.due?.dueString
+					}
+
+					await fetchWithAuth(`tasks/${id}`, {
+						method: 'POST',
+						body: JSON.stringify(body)
+					})
+
+					await getNotes() // refresh list
+				} else {
+					// local update
+					const currentNote = notes.find(n => n.id === id)
+					if (currentNote) {
+						saveNote({ ...currentNote, ...note })
+					}
+
+					dispatch({ type: 'UPDATE_NOTE', payload: { id, note } })
 				}
 
-				await fetchWithAuth('tasks', {
-					method: 'POST',
-					body: JSON.stringify(body)
-				})
+				if (lastAccessedNoteId !== id) {
+					dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
+				}
+			} catch (error) {
+				console.error('Failed to update note:', error)
+			} finally {
+				dispatch({ type: 'SET_LOADING', payload: false })
+			}
+		},
+		[session?.accessToken, fetchWithAuth, getNotes, notes, lastAccessedNoteId]
+	)
 
-				await getNotes() // refresh list
-			} else {
-				// local only
-				const newNote: Note = {
-					id: Crypto.randomUUID(),
-					userId: 'local',
-					title: note.title ?? '',
-					content: note.content ?? '',
-					priority: note.priority ?? 1,
-					label: note.label ?? 'Uncategorized',
-					projectId: 'local',
-					due: note.due ?? {
-						dateOnly: '',
-						dateTime: '',
-						dueString: ''
+	const deleteNote = useCallback(
+		async (id: string) => {
+			dispatch({ type: 'SET_LOADING', payload: true })
+			try {
+				if (session?.accessToken) {
+					await fetchWithAuth(`tasks/${id}`, {
+						method: 'DELETE'
+					})
+
+					// remove from local state immediately for better UX
+					dispatch({ type: 'DELETE_NOTE', payload: id })
+					deleteNoteDb(id)
+				} else {
+					// local delete
+					dispatch({ type: 'DELETE_NOTE', payload: id })
+					deleteNoteDb(id)
+
+					// If it's a server note (not local-only), track pending deletion
+					const noteToDelete = notes.find(n => n.id === id)
+					if (noteToDelete && noteToDelete.userId !== 'local') {
+						addPendingDeletion(id)
 					}
 				}
-				saveNote(newNote)
-				dispatch({ type: 'ADD_NOTE', payload: newNote })
-			}
-		} catch (error) {
-			console.error('Failed to add note:', error)
-		} finally {
-			dispatch({ type: 'SET_LOADING', payload: false })
-		}
-	}
 
-	const updateNote = async (id: string, note: Partial<Note>) => {
-		dispatch({ type: 'SET_LOADING', payload: true })
-		try {
-			if (session?.accessToken) {
-				const body = {
-					content: note.title,
-					description: note.content,
-					priority: note.priority,
-					due_string: note.due?.dueString
+				if (lastAccessedNoteId === id) {
+					dispatch({ type: 'SET_LAST_ACCESSED', payload: null })
 				}
-
-				await fetchWithAuth(`tasks/${id}`, {
-					method: 'POST',
-					body: JSON.stringify(body)
-				})
-
-				await getNotes() // refresh list
-			} else {
-				// local update
-				const currentNote = notes.find(n => n.id === id)
-				if (currentNote) {
-					saveNote({ ...currentNote, ...note })
+			} catch (error) {
+				console.error('Failed to delete note:', error)
+				if (session?.accessToken) {
+					await getNotes() // re-sync on error
 				}
-
-				dispatch({ type: 'UPDATE_NOTE', payload: { id, note } })
+			} finally {
+				dispatch({ type: 'SET_LOADING', payload: false })
 			}
+		},
+		[session?.accessToken, fetchWithAuth, getNotes, notes, lastAccessedNoteId]
+	)
 
-			if (lastAccessedNoteId !== id) {
-				dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
-			}
-		} catch (error) {
-			console.error('Failed to update note:', error)
-		} finally {
-			dispatch({ type: 'SET_LOADING', payload: false })
-		}
-	}
-
-	const deleteNote = async (id: string) => {
-		dispatch({ type: 'SET_LOADING', payload: true })
-		try {
-			if (session?.accessToken) {
-				await fetchWithAuth(`tasks/${id}`, {
-					method: 'DELETE'
-				})
-
-				// remove from local state immediately for better UX
-				dispatch({ type: 'DELETE_NOTE', payload: id })
-				deleteNoteDb(id)
-			} else {
-				// local delete
-				dispatch({ type: 'DELETE_NOTE', payload: id })
-				deleteNoteDb(id)
-
-				// If it's a server note (not local-only), track pending deletion
-				const noteToDelete = notes.find(n => n.id === id)
-				if (noteToDelete && noteToDelete.userId !== 'local') {
-					addPendingDeletion(id)
-				}
-			}
-
-			if (lastAccessedNoteId === id) {
-				dispatch({ type: 'SET_LAST_ACCESSED', payload: null })
-			}
-		} catch (error) {
-			console.error('Failed to delete note:', error)
-			if (session?.accessToken) {
-				await getNotes() // re-sync on error
-			}
-		} finally {
-			dispatch({ type: 'SET_LOADING', payload: false })
-		}
-	}
-
-	const setLastAccessedNoteId = (id: string | null) => {
+	const setLastAccessedNoteId = useCallback((id: string | null) => {
 		dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
-	}
+	}, [])
 
 	return (
 		<NotesContext.Provider
