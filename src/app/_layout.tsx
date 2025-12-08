@@ -6,6 +6,7 @@ import {
 	SafeAreaProvider,
 	useSafeAreaInsets
 } from 'react-native-safe-area-context'
+import { BiometricGate } from '~/components'
 import { AlertProvider } from '~/lib/providers/alert-provider'
 import { AuthProvider } from '~/lib/providers/auth-provider'
 import { NotesProvider } from '~/lib/providers/notes-provider'
@@ -23,6 +24,7 @@ export default function RootLayout() {
 				<ThemeProvider value={selectedTheme}>
 					<AlertProvider>
 						<NotesProvider>
+							<BiometricGate>
 							<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
 							<SafeAreaProvider
 								style={{
@@ -41,9 +43,10 @@ export default function RootLayout() {
 										options={{
 											presentation: 'modal'
 										}}
-									/>
-								</Stack>
-							</SafeAreaProvider>
+										/>
+									</Stack>
+								</SafeAreaProvider>
+						    </BiometricGate>
 						</NotesProvider>
 					</AlertProvider>
 				</ThemeProvider>
