@@ -55,6 +55,24 @@ export default function StatsScreen() {
 		return date.toLocaleDateString('en-US', { weekday: 'short' })
 	}
 
+	if (loading) {
+		return (
+			<View style={styles(theme).container}>
+				<Text style={styles(theme).sectionTitle}>Loading...</Text>
+			</View>
+		)
+	}
+
+	if (!session?.accessToken || status !== 'authenticated') {
+		return (
+			<View style={styles(theme).container}>
+				<Text style={styles(theme).sectionTitle}>
+					Statistics only available for Todoist authenticated users.
+				</Text>
+			</View>
+		)
+	}
+
 	return (
 		<View style={styles(theme).container}>
 			<Text style={styles(theme).sectionTitle}>Statistics</Text>

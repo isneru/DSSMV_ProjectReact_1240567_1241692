@@ -31,13 +31,15 @@ export default function TabLayout() {
 
 	return (
 		<MaterialTopTabs
+			initialRouteName='index'
 			tabBar={props => <Navbar {...props} />}
 			tabBarPosition='bottom'
 			screenOptions={{
 				swipeEnabled: true,
 				animationEnabled: true,
 				tabBarActiveTintColor: theme.colors.text,
-				tabBarInactiveTintColor: theme.colors.text
+				tabBarInactiveTintColor: theme.colors.text,
+				sceneStyle: { paddingBottom: 76 }
 			}}>
 			<MaterialTopTabs.Screen
 				name='calendar'

@@ -26,10 +26,7 @@ export default function RootLayout() {
 						<AlertProvider>
 							<BiometricGate>
 								<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-								<SafeAreaProvider
-									style={{
-										backgroundColor: selectedTheme.colors.background
-									}}>
+								<SafeAreaProvider>
 									<Stack
 										screenOptions={{
 											headerShown: false,
