@@ -5,9 +5,9 @@ export const colors = {
 	light: {
 		primary: 'rgb(166, 132, 255)',
 		background: 'rgb(255, 255, 255)',
-		card: 'rgb(242, 242, 242)',
+		card: 'rgb(250, 250, 250)',
 		text: 'rgb(0, 0, 0)',
-		border: 'rgb(199, 199, 204)',
+		border: 'rgb(212, 212, 216)',
 		notification: 'rgb(255, 59, 48)'
 	},
 	dark: {

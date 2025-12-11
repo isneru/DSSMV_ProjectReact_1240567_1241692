@@ -29,17 +29,43 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
 	const fetchWeather = async () => {
 		setIsLoading(true)
 		let location: Location.LocationObject | null = null
-		let { granted } = await Location.requestForegroundPermissionsAsync()
-		if (!granted) {
-			location = await Location.getLastKnownPositionAsync()
-			if (!location) {
-				setIsLoading(false)
-				return
+
+		try {
+			const servicesEnabled = await Location.hasServicesEnabledAsync()
+			if (servicesEnabled) {
+				const { granted } = await Location.requestForegroundPermissionsAsync()
+				if (granted) {
+					location = await Location.getCurrentPositionAsync({
+						accuracy: Location.Accuracy.Lowest
+					})
+				}
 			}
-		} else {
-			location = await Location.getCurrentPositionAsync({
-				accuracy: Location.Accuracy.Lowest
-			})
+		} catch (error) {
+			console.warn('Error fetching current location:', error)
+		}
+
+		if (!location) {
+			try {
+				location = await Location.getLastKnownPositionAsync()
+			} catch (error) {
+				console.warn('Error fetching last known location:', error)
+			}
+		}
+
+		if (!location) {
+			// Fallback to Lisbon
+			location = {
+				coords: {
+					latitude: 38.736946,
+					longitude: -9.142685,
+					altitude: null,
+					accuracy: null,
+					altitudeAccuracy: null,
+					heading: null,
+					speed: null
+				},
+				timestamp: Date.now()
+			}
 		}
 
 		try {
@@ -69,9 +95,12 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		fetchWeather()
 
-		const intervalId = setInterval(() => {
-			fetchWeather()
-		}, 1000 * 60 * 30) // 30 minutes
+		const intervalId = setInterval(
+			() => {
+				fetchWeather()
+			},
+			1000 * 60 * 30
+		) // 30 minutes
 
 		return () => {
 			clearInterval(intervalId)

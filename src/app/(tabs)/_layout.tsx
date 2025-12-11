@@ -11,13 +11,11 @@ import {
 import { withLayoutContext } from 'expo-router'
 import {
 	CalendarDotsIcon,
-	FileDashedIcon,
-	FileIcon,
+	ChartBarIcon,
 	GearSixIcon,
 	HouseIcon
 } from 'phosphor-react-native'
 import { Navbar } from '~/components/navbar'
-import { useNotes } from '~/lib/providers/notes-provider'
 
 const { Navigator } = createMaterialTopTabNavigator()
 
@@ -29,7 +27,6 @@ export const MaterialTopTabs = withLayoutContext<
 >(Navigator)
 
 export default function TabLayout() {
-	const { lastAccessedNoteId } = useNotes()
 	const theme = useTheme()
 
 	return (
@@ -69,28 +66,16 @@ export default function TabLayout() {
 				}}
 			/>
 			<MaterialTopTabs.Screen
-				name='note/[id]'
-				listeners={{
-					tabPress: e => {
-						if (!lastAccessedNoteId) {
-							e.preventDefault()
-						}
-					}
-				}}
+				name='statistics'
 				options={{
-					title: 'Last Note',
-					swipeEnabled: false,
-					tabBarStyle: { display: 'none' },
-					tabBarIcon: ({ color, focused }) => {
-						const Icon = lastAccessedNoteId ? FileIcon : FileDashedIcon
-						return (
-							<Icon
-								weight={focused ? 'fill' : 'regular'}
-								size={20}
-								color={color}
-							/>
-						)
-					}
+					title: 'Stats',
+					tabBarIcon: ({ color, focused }) => (
+						<ChartBarIcon
+							weight={focused ? 'fill' : 'regular'}
+							size={20}
+							color={color}
+						/>
+					)
 				}}
 			/>
 			<MaterialTopTabs.Screen

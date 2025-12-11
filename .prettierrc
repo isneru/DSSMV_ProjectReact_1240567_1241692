@@ -1,13 +1,12 @@
-
 {
-  "arrowParens": "avoid",
-  "bracketSameLine": true,
-  "jsxSingleQuote": true,
-  "quoteProps": "consistent",
-  "resolveGlobalModules": true,
-  "semi": false,
-  "singleQuote": true,
-  "trailingComma": "none",
-  "useEditorConfig": false,
-  "useTabs": true
+	"arrowParens": "avoid",
+	"bracketSameLine": true,
+	"jsxSingleQuote": true,
+	"quoteProps": "consistent",
+	"resolveGlobalModules": true,
+	"semi": false,
+	"singleQuote": true,
+	"trailingComma": "none",
+	"useEditorConfig": false,
+	"useTabs": true
 }

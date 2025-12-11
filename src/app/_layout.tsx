@@ -21,35 +21,29 @@ export default function RootLayout() {
 	return (
 		<AuthProvider>
 			<WeatherProvider>
-				<ThemeProvider value={selectedTheme}>
-					<AlertProvider>
-						<NotesProvider>
+				<NotesProvider>
+					<ThemeProvider value={selectedTheme}>
+						<AlertProvider>
 							<BiometricGate>
-							<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-							<SafeAreaProvider
-								style={{
-									backgroundColor: selectedTheme.colors.background
-								}}>
-								<Stack
-									screenOptions={{
-										headerShown: false,
-										contentStyle: {
-											paddingTop: insets.top,
-											paddingBottom: insets.bottom
-										}
+								<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+								<SafeAreaProvider
+									style={{
+										backgroundColor: selectedTheme.colors.background
 									}}>
-									<Stack.Screen
-										name='note/new'
-										options={{
-											presentation: 'modal'
+									<Stack
+										screenOptions={{
+											headerShown: false,
+											contentStyle: {
+												paddingTop: insets.top,
+												paddingBottom: insets.bottom
+											}
 										}}
-										/>
-									</Stack>
+									/>
 								</SafeAreaProvider>
-						    </BiometricGate>
-						</NotesProvider>
-					</AlertProvider>
-				</ThemeProvider>
+							</BiometricGate>
+						</AlertProvider>
+					</ThemeProvider>
+				</NotesProvider>
 			</WeatherProvider>
 		</AuthProvider>
 	)

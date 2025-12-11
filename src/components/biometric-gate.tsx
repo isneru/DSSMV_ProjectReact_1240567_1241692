@@ -1,9 +1,15 @@
-import { useTheme } from '@react-navigation/native'
+import { Theme, useTheme } from '@react-navigation/native'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 import { FingerprintIcon, LockKeyIcon } from 'phosphor-react-native'
-import { useEffect, useState, type ReactNode } from 'react'
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import {
+	ActivityIndicator,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View
+} from 'react-native'
 
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled'
 
@@ -12,113 +18,112 @@ type Props = {
 }
 
 export const BiometricGate = ({ children }: Props) => {
-	const [isLocked, setIsLocked] = useState(true) // Começa bloqueado por segurança
-	const [biometryType, setBiometryType] = useState<LocalAuthentication.AuthenticationType | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
 	const theme = useTheme()
 
-	useEffect(() => {
-		checkBiometricSettings()
-	}, [])
+	const [isLocked, setIsLocked] = useState(true)
+	const [biometryType, setBiometryType] =
+		useState<LocalAuthentication.AuthenticationType | null>(null)
+	const [isLoading, setIsLoading] = useState(true)
 
-	const checkBiometricSettings = async () => {
-		try {
-	
-			const enabled = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY)
-			
-			if (enabled !== 'true') {
-				setIsLocked(false)
-                setIsLoading(false)
-				return
-			}
-
-
-			const hasHardware = await LocalAuthentication.hasHardwareAsync()
-            const isEnrolled = await LocalAuthentication.isEnrolledAsync()
-
-			if (hasHardware && isEnrolled) {
-  
-                const types = await LocalAuthentication.supportedAuthenticationTypesAsync()
-                if (types.length > 0) {
-                    setBiometryType(types[0])
-                }
-				authenticate()
-			} else {
- 
-				setIsLocked(false)
-			}
-            setIsLoading(false)
-		} catch (error) {
-			console.error('Erro ao verificar biometria', error)
-			setIsLocked(false)
-            setIsLoading(false)
-		}
-	}
-
-	const authenticate = async () => {
+	const authenticate = useCallback(async () => {
 		try {
 			const result = await LocalAuthentication.authenticateAsync({
-				promptMessage: 'Desbloquear Tick it',
-				fallbackLabel: 'Usar código',
-                cancelLabel: 'Cancelar',
-                disableDeviceFallback: false
+				promptMessage: 'Unlock Tick it',
+				fallbackLabel: 'Use code',
+				cancelLabel: 'Cancel',
+				disableDeviceFallback: false
 			})
 
 			if (result.success) {
 				setIsLocked(false)
 			}
 		} catch (error) {
-			console.error('Falha na autenticação', error)
+			console.error('Authentication failed', error)
 		}
-	}
+	}, [setIsLocked])
 
-    if (isLoading) {
-        return (
-            <View style={[styles(theme).container, { justifyContent: 'center' }]}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-            </View>
-        )
-    }
+	const checkBiometricSettings = useCallback(async () => {
+		try {
+			const enabled = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY)
+
+			if (enabled !== 'true') {
+				setIsLocked(false)
+				setIsLoading(false)
+				return
+			}
+
+			const hasHardware = await LocalAuthentication.hasHardwareAsync()
+			const isEnrolled = await LocalAuthentication.isEnrolledAsync()
+
+			if (hasHardware && isEnrolled) {
+				const types =
+					await LocalAuthentication.supportedAuthenticationTypesAsync()
+				if (types.length > 0) {
+					setBiometryType(types[0])
+				}
+				authenticate()
+			} else {
+				setIsLocked(false)
+			}
+			setIsLoading(false)
+		} catch (error) {
+			console.error('Error checking biometric settings', error)
+			setIsLocked(false)
+			setIsLoading(false)
+		}
+	}, [authenticate])
+
+	useEffect(() => {
+		checkBiometricSettings()
+	}, [checkBiometricSettings])
+
+	if (isLoading) {
+		return (
+			<View style={styles(theme).container}>
+				<ActivityIndicator size='large' color={theme.colors.primary} />
+			</View>
+		)
+	}
 
 	if (isLocked) {
 		return (
 			<View style={styles(theme).container}>
-                <View style={styles(theme).iconContainer}>
-                    {biometryType === LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION ? (
-				        <FingerprintIcon size={64} color={theme.colors.primary} /> 
-
-                    ) : (
-                        <LockKeyIcon size={64} color={theme.colors.primary} />
-                    )}
-                </View>
-				<Text style={styles(theme).title}>Tick it Bloqueado</Text>
+				<View style={styles(theme).iconContainer}>
+					{biometryType ===
+					LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION ? (
+						<FingerprintIcon size={64} color={theme.colors.primary} />
+					) : (
+						<LockKeyIcon size={64} color={theme.colors.primary} />
+					)}
+				</View>
+				<Text style={styles(theme).title}>Tick it Locked</Text>
 				<TouchableOpacity style={styles(theme).button} onPress={authenticate}>
-					<Text style={styles(theme).buttonText}>Tentar Novamente</Text>
+					<Text style={styles(theme).buttonText}>Try Again</Text>
 				</TouchableOpacity>
 			</View>
 		)
 	}
 
-	return <>{children}</>
+	return children
 }
 
-const styles = (theme: any) =>
-	StyleSheet.create({
+const styles = (theme: Theme) => {
+	return StyleSheet.create({
 		container: {
 			flex: 1,
 			backgroundColor: theme.colors.background,
 			alignItems: 'center',
 			justifyContent: 'center',
-            padding: 24
+			padding: 24
 		},
-        iconContainer: {
-            marginBottom: 24,
-            padding: 20,
-            borderRadius: 50,
-            backgroundColor: theme.colors.card,
-            borderWidth: 1,
-            borderColor: theme.colors.border
-        },
+		iconContainer: {
+			marginBottom: 24,
+			padding: 20,
+			borderRadius: 50,
+			backgroundColor: theme.colors.card,
+			borderWidth: 1,
+			borderColor: theme.colors.border
+		},
 		title: {
 			fontSize: 24,
 			fontWeight: 'bold',
@@ -137,3 +142,4 @@ const styles = (theme: any) =>
 			fontWeight: '600'
 		}
 	})
+}

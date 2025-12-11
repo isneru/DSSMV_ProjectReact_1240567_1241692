@@ -1,5 +1,4 @@
 import * as Crypto from 'expo-crypto'
-import * as LocalStorage from 'expo-secure-store'
 import {
 	createContext,
 	ReactNode,
@@ -23,14 +22,12 @@ import type { Note, TodoistNote, TodoistUser } from '~/lib/types'
 
 type NotesState = {
 	notes: Note[]
-	lastAccessedNoteId: string | null
 	isLoading: boolean
 }
 
 type NotesAction =
 	| { type: 'SET_LOADING'; payload: boolean }
 	| { type: 'SET_NOTES'; payload: Note[] }
-	| { type: 'SET_LAST_ACCESSED'; payload: string | null }
 	| { type: 'ADD_NOTE'; payload: Note }
 	| { type: 'UPDATE_NOTE'; payload: { id: string; note: Partial<Note> } }
 	| { type: 'DELETE_NOTE'; payload: string }
@@ -41,8 +38,6 @@ const notesReducer = (state: NotesState, action: NotesAction): NotesState => {
 			return { ...state, isLoading: action.payload }
 		case 'SET_NOTES':
 			return { ...state, notes: action.payload }
-		case 'SET_LAST_ACCESSED':
-			return { ...state, lastAccessedNoteId: action.payload }
 		case 'ADD_NOTE':
 			return { ...state, notes: [...state.notes, action.payload] }
 		case 'UPDATE_NOTE':
@@ -67,8 +62,6 @@ type NotesProviderProps = {
 }
 
 type NotesContextType = {
-	lastAccessedNoteId: string | null
-	setLastAccessedNoteId: (id: string | null) => void
 	notes: Note[]
 	isLoading: boolean
 	getNotes: () => Promise<void>
@@ -86,13 +79,12 @@ const BASE_URL = 'https://todoist.com/api/v1/'
 
 const INITIAL_STATE: NotesState = {
 	notes: [],
-	lastAccessedNoteId: null,
 	isLoading: false
 }
 
 export const NotesProvider = ({ children }: NotesProviderProps) => {
 	const { session, status } = useAuth()
-	const [{ notes, lastAccessedNoteId, isLoading }, dispatch] = useReducer(
+	const [{ notes, isLoading }, dispatch] = useReducer(
 		notesReducer,
 		INITIAL_STATE
 	)
@@ -104,22 +96,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 		const localNotes = getNotesDb()
 		dispatch({ type: 'SET_NOTES', payload: localNotes })
 		dispatch({ type: 'SET_LOADING', payload: false })
-
-		LocalStorage.getItemAsync('lastAccessedNoteId').then(id => {
-			if (id) {
-				dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
-			}
-		})
 	}, [])
-
-	useEffect(() => {
-		// make localstore be in sync with lastAccessedNoteId
-		if (lastAccessedNoteId) {
-			LocalStorage.setItemAsync('lastAccessedNoteId', lastAccessedNoteId)
-		} else {
-			LocalStorage.deleteItemAsync('lastAccessedNoteId')
-		}
-	}, [lastAccessedNoteId])
 
 	const fetchWithAuth = useCallback(
 		async (endpoint: string, options: RequestInit = {}) => {
@@ -329,17 +306,13 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 
 					dispatch({ type: 'UPDATE_NOTE', payload: { id, note } })
 				}
-
-				if (lastAccessedNoteId !== id) {
-					dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
-				}
 			} catch (error) {
 				console.error('Failed to update note:', error)
 			} finally {
 				dispatch({ type: 'SET_LOADING', payload: false })
 			}
 		},
-		[session?.accessToken, fetchWithAuth, getNotes, notes, lastAccessedNoteId]
+		[session?.accessToken, fetchWithAuth, getNotes, notes]
 	)
 
 	const deleteNote = useCallback(
@@ -365,10 +338,6 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 						addPendingDeletion(id)
 					}
 				}
-
-				if (lastAccessedNoteId === id) {
-					dispatch({ type: 'SET_LAST_ACCESSED', payload: null })
-				}
 			} catch (error) {
 				console.error('Failed to delete note:', error)
 				if (session?.accessToken) {
@@ -378,18 +347,12 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				dispatch({ type: 'SET_LOADING', payload: false })
 			}
 		},
-		[session?.accessToken, fetchWithAuth, getNotes, notes, lastAccessedNoteId]
+		[session?.accessToken, fetchWithAuth, getNotes, notes]
 	)
-
-	const setLastAccessedNoteId = useCallback((id: string | null) => {
-		dispatch({ type: 'SET_LAST_ACCESSED', payload: id })
-	}, [])
 
 	return (
 		<NotesContext.Provider
 			value={{
-				lastAccessedNoteId,
-				setLastAccessedNoteId,
 				notes,
 				isLoading,
 				getNotes,
