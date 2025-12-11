@@ -10,6 +10,7 @@ import {
 	WindIcon,
 	type Icon
 } from 'phosphor-react-native'
+import { useMemo } from 'react'
 import {
 	ActivityIndicator,
 	StyleSheet,
@@ -39,8 +40,9 @@ const weatherIcons: Record<string, Icon> = {
 }
 
 export const WeatherWidget = () => {
-	const { weather, refetch, isLoading } = useWeather()
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
+	const { weather, refetch, isLoading } = useWeather()
 
 	const CurrentIcon = weather?.condition
 		? weatherIcons[weather.condition] || CloudSunIcon
@@ -48,22 +50,20 @@ export const WeatherWidget = () => {
 
 	return (
 		<TouchableWithoutFeedback onPress={refetch} disabled={isLoading}>
-			<View style={styles(theme).weather}>
-				<View style={styles(theme).contentContainer}>
+			<View style={styles.weather}>
+				<View style={styles.contentContainer}>
 					<CurrentIcon color={theme.colors.text} size={24} weight='regular' />
 					<View>
-						<Text style={styles(theme).textTemp}>
+						<Text style={styles.textTemp}>
 							{weather?.temperature ? `${weather.temperature}°` : '--'}
 						</Text>
-						<Text style={styles(theme).textCity}>
-							{weather?.city || 'Loading...'}
-						</Text>
+						<Text style={styles.textCity}>{weather?.city || 'Loading...'}</Text>
 					</View>
 				</View>
 
 				{isLoading && (
 					<ActivityIndicator
-						style={styles(theme).loading}
+						style={styles.loading}
 						size='small'
 						color={theme.colors.primary}
 					/>
@@ -73,7 +73,7 @@ export const WeatherWidget = () => {
 	)
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		weather: {
 			borderRadius: 12,

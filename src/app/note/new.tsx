@@ -1,6 +1,6 @@
-import { useTheme } from '@react-navigation/native'
+import { Theme, useTheme } from '@react-navigation/native'
 import { Href, useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
 	KeyboardAvoidingView,
 	Platform,
@@ -12,10 +12,12 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNotes } from '~/lib/providers/notes-provider'
+import { rgbOpacity } from '~/lib/utils'
 
 export default function NewNoteScreen() {
-	const router = useRouter()
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
+	const router = useRouter()
 	const { addNote } = useNotes()
 
 	const [title, setTitle] = useState('')
@@ -49,41 +51,41 @@ export default function NewNoteScreen() {
 	}
 
 	return (
-		<SafeAreaView style={styles(theme).container} edges={['bottom']}>
+		<SafeAreaView style={styles.container} edges={['bottom']}>
 			<KeyboardAvoidingView
 				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				style={styles(theme).keyboardView}>
-				<View style={styles(theme).header}>
+				style={styles.keyboardView}>
+				<View style={styles.header}>
 					<TouchableOpacity onPress={handleBack}>
-						<Text style={styles(theme).cancelButton}>Cancel</Text>
+						<Text style={styles.cancelButton}>Cancel</Text>
 					</TouchableOpacity>
-					<Text style={styles(theme).headerTitle}>New Note</Text>
+					<Text style={styles.headerTitle}>New Note</Text>
 					<TouchableOpacity
 						onPress={handleSave}
 						disabled={isSubmitting || (!title.trim() && !content.trim())}>
 						<Text
 							style={[
-								styles(theme).saveButton,
-								!title.trim() && !content.trim() && styles(theme).disabledButton
+								styles.saveButton,
+								!title.trim() && !content.trim() && styles.disabledButton
 							]}>
 							Save
 						</Text>
 					</TouchableOpacity>
 				</View>
 
-				<View style={styles(theme).content}>
+				<View style={styles.content}>
 					<TextInput
-						style={styles(theme).titleInput}
+						style={styles.titleInput}
 						placeholder='Title'
-						placeholderTextColor={theme.colors.text + '80'}
+						placeholderTextColor={rgbOpacity(theme.colors.text, 0.8)}
 						value={title}
 						onChangeText={setTitle}
 						autoFocus
 					/>
 					<TextInput
-						style={styles(theme).contentInput}
+						style={styles.contentInput}
 						placeholder='Note'
-						placeholderTextColor={theme.colors.text + '80'}
+						placeholderTextColor={rgbOpacity(theme.colors.text, 0.8)}
 						value={content}
 						onChangeText={setContent}
 						multiline
@@ -95,8 +97,8 @@ export default function NewNoteScreen() {
 	)
 }
 
-const styles = (theme: any) =>
-	StyleSheet.create({
+const createStyles = (theme: Theme) => {
+	return StyleSheet.create({
 		container: {
 			flex: 1,
 			backgroundColor: theme.colors.background
@@ -147,3 +149,4 @@ const styles = (theme: any) =>
 			lineHeight: 24
 		}
 	})
+}

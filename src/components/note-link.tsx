@@ -1,5 +1,6 @@
 import { useTheme, type Theme } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
+import { useMemo } from 'react'
 import { StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { useAlert } from '~/lib/providers/alert-provider'
 import { useNotes } from '~/lib/providers/notes-provider'
@@ -9,11 +10,13 @@ import type { Note } from '~/lib/types'
 type Props = {
 	note: Note
 }
+
 export const NoteLink = ({ note }: Props) => {
+	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 	const router = useRouter()
 	const { deleteNote } = useNotes()
 	const { showAlert } = useAlert()
-	const theme = useTheme()
 
 	return (
 		<TouchableOpacity
@@ -35,13 +38,13 @@ export const NoteLink = ({ note }: Props) => {
 				)
 			}}
 			activeOpacity={0.8}
-			style={styles(theme).container}>
-			<Text style={styles(theme).title}>{note.title}</Text>
+			style={styles.container}>
+			<Text style={styles.title}>{note.title}</Text>
 		</TouchableOpacity>
 	)
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			paddingHorizontal: 12,

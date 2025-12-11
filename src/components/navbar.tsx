@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { type MaterialTopTabBarProps } from '@react-navigation/material-top-tabs'
 import { type Theme, useTheme } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
-import { Fragment } from 'react'
+import { Fragment, useMemo } from 'react'
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 
@@ -19,6 +19,7 @@ export const Navbar = ({
 	navigation
 }: MaterialTopTabBarProps) => {
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 	const router = useRouter()
 
 	const currentRoute = state.routes[state.index]
@@ -59,16 +60,16 @@ export const Navbar = ({
 			A${r},${r} 0 0,1 ${endX},${HALF_STROKE}
 			L${navWidth - BORDER_RADIUS},${HALF_STROKE}
 			Q${navWidth - HALF_STROKE},${HALF_STROKE} ${
-			navWidth - HALF_STROKE
-		},${BORDER_RADIUS}
+				navWidth - HALF_STROKE
+			},${BORDER_RADIUS}
 			L${navWidth - HALF_STROKE},${TAB_BAR_HEIGHT - BORDER_RADIUS}
 			Q${navWidth - HALF_STROKE},${TAB_BAR_HEIGHT - HALF_STROKE} ${
-			navWidth - BORDER_RADIUS
-		},${TAB_BAR_HEIGHT - HALF_STROKE}
+				navWidth - BORDER_RADIUS
+			},${TAB_BAR_HEIGHT - HALF_STROKE}
 			L${BORDER_RADIUS},${TAB_BAR_HEIGHT - HALF_STROKE}
 			Q${HALF_STROKE},${TAB_BAR_HEIGHT - HALF_STROKE} ${HALF_STROKE},${
-			TAB_BAR_HEIGHT - BORDER_RADIUS
-		}
+				TAB_BAR_HEIGHT - BORDER_RADIUS
+			}
 			Z
 		`
 	}
@@ -76,8 +77,8 @@ export const Navbar = ({
 	const navWidth = width - MARGIN * 2
 
 	return (
-		<View style={styles(theme).container}>
-			<View style={styles(theme).backgroundContainer}>
+		<View style={styles.container}>
+			<View style={styles.backgroundContainer}>
 				<Svg width={navWidth} height={TAB_BAR_HEIGHT}>
 					<Path
 						d={getPath()}
@@ -88,11 +89,11 @@ export const Navbar = ({
 				</Svg>
 			</View>
 
-			<View style={styles(theme).contentContainer}>
-				<View style={styles(theme).fabContainer}>
+			<View style={styles.contentContainer}>
+				<View style={styles.fabContainer}>
 					<TouchableOpacity
 						onPress={() => router.push('/note/new')}
-						style={styles(theme).fab}>
+						style={styles.fab}>
 						<Ionicons name='add' size={32} color={theme.colors.text} />
 					</TouchableOpacity>
 				</View>
@@ -117,7 +118,7 @@ export const Navbar = ({
 
 					return (
 						<Fragment key={route.key}>
-							<TouchableOpacity onPress={onPress} style={styles(theme).button}>
+							<TouchableOpacity onPress={onPress} style={styles.button}>
 								{Icon && <Icon focused={isFocused} color={theme.colors.text} />}
 							</TouchableOpacity>
 							{index === 1 && <View style={{ width: 40 }} />}
@@ -129,7 +130,7 @@ export const Navbar = ({
 	)
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			position: 'absolute',

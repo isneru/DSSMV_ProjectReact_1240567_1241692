@@ -22,11 +22,13 @@ export default function RootLayout() {
 		<AuthProvider>
 			<WeatherProvider>
 				<NotesProvider>
-					<ThemeProvider value={selectedTheme}>
-						<AlertProvider>
-							<BiometricGate>
-								<StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-								<SafeAreaProvider>
+					<SafeAreaProvider>
+						<ThemeProvider value={selectedTheme}>
+							<AlertProvider>
+								<BiometricGate>
+									<StatusBar
+										style={colorScheme === 'dark' ? 'light' : 'dark'}
+									/>
 									<Stack
 										screenOptions={{
 											headerShown: false,
@@ -36,10 +38,10 @@ export default function RootLayout() {
 											}
 										}}
 									/>
-								</SafeAreaProvider>
-							</BiometricGate>
-						</AlertProvider>
-					</ThemeProvider>
+								</BiometricGate>
+							</AlertProvider>
+						</ThemeProvider>
+					</SafeAreaProvider>
 				</NotesProvider>
 			</WeatherProvider>
 		</AuthProvider>

@@ -1,7 +1,7 @@
 import { Theme, useTheme } from '@react-navigation/native'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native'
 import { useAuth } from '~/lib/providers/auth-provider'
 
@@ -9,6 +9,7 @@ const BIOMETRIC_ENABLED_KEY = 'biometric_enabled'
 
 export default function SettingsScreen() {
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 	const { session, status, login, logout } = useAuth()
 	const [isBiometricEnabled, setIsBiometricEnabled] = useState(false)
 	const [isSupported, setIsSupported] = useState(false)
@@ -45,9 +46,9 @@ export default function SettingsScreen() {
 	}
 
 	return (
-		<View style={styles(theme).container}>
-			<Text style={styles(theme).sectionTitle}>Account</Text>
-			<View style={styles(theme).card}>
+		<View style={styles.container}>
+			<Text style={styles.sectionTitle}>Account</Text>
+			<View style={styles.card}>
 				<Text style={{ color: theme.colors.text }}>Status: {status}</Text>
 				{session?.user.name && (
 					<Text style={{ color: theme.colors.text, marginTop: 4 }}>
@@ -56,9 +57,9 @@ export default function SettingsScreen() {
 				)}
 
 				<TouchableOpacity
-					style={styles(theme).authBtn}
+					style={styles.authBtn}
 					onPress={status === 'unauthenticated' ? login : logout}>
-					<Text style={styles(theme).btnText}>
+					<Text style={styles.btnText}>
 						{status === 'unauthenticated' ? 'Login with Todoist' : 'Logout'}
 					</Text>
 				</TouchableOpacity>
@@ -66,10 +67,10 @@ export default function SettingsScreen() {
 
 			{isSupported && (
 				<>
-					<Text style={styles(theme).sectionTitle}>Security</Text>
-					<View style={styles(theme).card}>
-						<View style={styles(theme).row}>
-							<Text style={styles(theme).rowText}>Biometric Lock</Text>
+					<Text style={styles.sectionTitle}>Security</Text>
+					<View style={styles.card}>
+						<View style={styles.row}>
+							<Text style={styles.rowText}>Biometric Lock</Text>
 							<Switch
 								value={isBiometricEnabled}
 								onValueChange={toggleBiometric}
@@ -87,7 +88,7 @@ export default function SettingsScreen() {
 	)
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			flex: 1,

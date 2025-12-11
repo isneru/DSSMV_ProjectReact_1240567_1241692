@@ -1,4 +1,5 @@
 import { Theme, useTheme } from '@react-navigation/native'
+import { useMemo } from 'react'
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { NoteLink, WeatherWidget, WeekRow } from '~/components'
 import { useAuth } from '~/lib/providers/auth-provider'
@@ -6,16 +7,17 @@ import { useNotes } from '~/lib/providers/notes-provider'
 import { sizes } from '~/lib/theme'
 
 export default function Index() {
+	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 	const { notes, isLoading, getNotes } = useNotes()
 	const { session } = useAuth()
-	const theme = useTheme()
 
 	return (
-		<View style={styles(theme).container}>
-			<View style={styles(theme).hero}>
-				<View style={styles(theme).greet}>
-					<Text style={styles(theme).textGreet}>Good Morning,</Text>
-					<Text style={styles(theme).textGreet}>
+		<View style={styles.container}>
+			<View style={styles.hero}>
+				<View style={styles.greet}>
+					<Text style={styles.textGreet}>Good Morning,</Text>
+					<Text style={styles.textGreet}>
 						{session?.user.name ?? 'Local user'}
 					</Text>
 				</View>
@@ -41,7 +43,7 @@ export default function Index() {
 	)
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			flex: 1,

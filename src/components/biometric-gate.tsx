@@ -2,7 +2,13 @@ import { Theme, useTheme } from '@react-navigation/native'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 import { FingerprintIcon, LockKeyIcon } from 'phosphor-react-native'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	type ReactNode
+} from 'react'
 import {
 	ActivityIndicator,
 	StyleSheet,
@@ -19,6 +25,7 @@ type Props = {
 
 export const BiometricGate = ({ children }: Props) => {
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 
 	const [isLocked, setIsLocked] = useState(true)
 	const [biometryType, setBiometryType] =
@@ -79,7 +86,7 @@ export const BiometricGate = ({ children }: Props) => {
 
 	if (isLoading) {
 		return (
-			<View style={styles(theme).container}>
+			<View style={styles.container}>
 				<ActivityIndicator size='large' color={theme.colors.primary} />
 			</View>
 		)
@@ -87,8 +94,8 @@ export const BiometricGate = ({ children }: Props) => {
 
 	if (isLocked) {
 		return (
-			<View style={styles(theme).container}>
-				<View style={styles(theme).iconContainer}>
+			<View style={styles.container}>
+				<View style={styles.iconContainer}>
 					{biometryType ===
 					LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION ? (
 						<FingerprintIcon size={64} color={theme.colors.primary} />
@@ -96,9 +103,9 @@ export const BiometricGate = ({ children }: Props) => {
 						<LockKeyIcon size={64} color={theme.colors.primary} />
 					)}
 				</View>
-				<Text style={styles(theme).title}>Tick it Locked</Text>
-				<TouchableOpacity style={styles(theme).button} onPress={authenticate}>
-					<Text style={styles(theme).buttonText}>Try Again</Text>
+				<Text style={styles.title}>Tick it Locked</Text>
+				<TouchableOpacity style={styles.button} onPress={authenticate}>
+					<Text style={styles.buttonText}>Try Again</Text>
 				</TouchableOpacity>
 			</View>
 		)
@@ -107,7 +114,7 @@ export const BiometricGate = ({ children }: Props) => {
 	return children
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			flex: 1,

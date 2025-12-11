@@ -10,6 +10,7 @@ import { rgbOpacity } from '~/lib/utils'
 
 export default function StatsScreen() {
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 	const { session, status } = useAuth()
 	const [loading, setLoading] = useState(false)
 	const [statistics, setStatistics] = useState<TodoistStatistics | null>(null)
@@ -57,16 +58,16 @@ export default function StatsScreen() {
 
 	if (loading) {
 		return (
-			<View style={styles(theme).container}>
-				<Text style={styles(theme).sectionTitle}>Loading...</Text>
+			<View style={styles.container}>
+				<Text style={styles.sectionTitle}>Loading...</Text>
 			</View>
 		)
 	}
 
 	if (!session?.accessToken || status !== 'authenticated') {
 		return (
-			<View style={styles(theme).container}>
-				<Text style={styles(theme).sectionTitle}>
+			<View style={styles.container}>
+				<Text style={styles.sectionTitle}>
 					Statistics only available for Todoist authenticated users.
 				</Text>
 			</View>
@@ -74,16 +75,16 @@ export default function StatsScreen() {
 	}
 
 	return (
-		<View style={styles(theme).container}>
-			<Text style={styles(theme).sectionTitle}>Statistics</Text>
-			<View style={styles(theme).card}>
-				<Text style={styles(theme).cardTitle}>Karma</Text>
-				<View style={styles(theme).karmaRow}>
-					<Text style={styles(theme).karma}>{statistics?.karma}</Text>
+		<View style={styles.container}>
+			<Text style={styles.sectionTitle}>Statistics</Text>
+			<View style={styles.card}>
+				<Text style={styles.cardTitle}>Karma</Text>
+				<View style={styles.karmaRow}>
+					<Text style={styles.karma}>{statistics?.karma}</Text>
 					{statistics?.karma_trend === 'up' && (
 						<View
 							style={[
-								styles(theme).karmaTrendIcon,
+								styles.karmaTrendIcon,
 								{ backgroundColor: rgbOpacity(theme.colors.primary, 0.2) }
 							]}>
 							<ArrowUpIcon size={16} color={theme.colors.primary} />
@@ -92,45 +93,37 @@ export default function StatsScreen() {
 					{statistics?.karma_trend === 'down' && (
 						<View
 							style={[
-								styles(theme).karmaTrendIcon,
+								styles.karmaTrendIcon,
 								{ backgroundColor: rgbOpacity(theme.colors.notification, 0.2) }
 							]}>
 							<ArrowDownIcon size={16} color={theme.colors.notification} />
 						</View>
 					)}
 				</View>
-				<Text style={styles(theme).subText}>
+				<Text style={styles.subText}>
 					Completed Tasks: {statistics?.completed_count} tasks
 				</Text>
 			</View>
 
-			<Text style={styles(theme).sectionTitle}>Daily Progress</Text>
-			<View style={styles(theme).gridRow}>
+			<Text style={styles.sectionTitle}>Daily Progress</Text>
+			<View style={styles.gridRow}>
 				<View
-					style={[
-						styles(theme).card,
-						styles(theme).centerCard,
-						{ flex: 1, flexBasis: 0 }
-					]}>
+					style={[styles.card, styles.centerCard, { flex: 1, flexBasis: 0 }]}>
 					<FireIcon size={32} color={theme.colors.primary} weight='fill' />
-					<View style={styles(theme).statContent}>
-						<Text style={styles(theme).bigNumber}>
+					<View style={styles.statContent}>
+						<Text style={styles.bigNumber}>
 							{statistics?.goals?.current_daily_streak?.count ?? 0}
 						</Text>
-						<Text style={styles(theme).statLabel}>Day Streak</Text>
+						<Text style={styles.statLabel}>Day Streak</Text>
 					</View>
-					<Text style={styles(theme).tinyText}>
+					<Text style={styles.tinyText}>
 						Personal Best: {statistics?.goals?.max_daily_streak?.count ?? 0}{' '}
 						days
 					</Text>
 				</View>
 
 				<View
-					style={[
-						styles(theme).card,
-						styles(theme).centerCard,
-						{ flex: 1, flexBasis: 0 }
-					]}>
+					style={[styles.card, styles.centerCard, { flex: 1, flexBasis: 0 }]}>
 					<CircularProgress
 						size={80}
 						strokeWidth={8}
@@ -138,28 +131,26 @@ export default function StatsScreen() {
 						color={theme.colors.primary}
 						emptyColor={rgbOpacity(theme.colors.border, 0.5)}>
 						<View style={{ alignItems: 'center' }}>
-							<Text style={styles(theme).circleBigNumber}>
-								{todayCompleted}
-							</Text>
-							<Text style={styles(theme).circleSmallNumber}>/ {dailyGoal}</Text>
+							<Text style={styles.circleBigNumber}>{todayCompleted}</Text>
+							<Text style={styles.circleSmallNumber}>/ {dailyGoal}</Text>
 						</View>
 					</CircularProgress>
 
-					<Text style={styles(theme).statLabel}>Today's Goal</Text>
+					<Text style={styles.statLabel}>Today's Goal</Text>
 				</View>
 			</View>
 
-			<Text style={styles(theme).sectionTitle}>Last 7 Days Activity</Text>
+			<Text style={styles.sectionTitle}>Last 7 Days Activity</Text>
 
-			<View style={[styles(theme).card, { paddingBottom: 8 }]}>
-				<View style={styles(theme).chartContainer}>
+			<View style={[styles.card, { paddingBottom: 8 }]}>
+				<View style={styles.chartContainer}>
 					<View
 						style={[
-							styles(theme).goalLineContainer,
+							styles.goalLineContainer,
 							{ bottom: `${goalLinePosition}%` }
 						]}>
-						<View style={styles(theme).goalLineDashed} />
-						<Text style={styles(theme).goalLineText}>Goal: {dailyGoal}</Text>
+						<View style={styles.goalLineDashed} />
+						<Text style={styles.goalLineText}>Goal: {dailyGoal}</Text>
 					</View>
 
 					{daysData.map((item, index) => {
@@ -167,11 +158,11 @@ export default function StatsScreen() {
 						const isToday = index === daysData.length - 1
 
 						return (
-							<View key={index} style={styles(theme).chartColumn}>
+							<View key={index} style={styles.chartColumn}>
 								<View style={{ flex: 1, justifyContent: 'flex-end' }}>
 									<View
 										style={[
-											styles(theme).bar,
+											styles.bar,
 											{
 												height: `${heightPercent}%`,
 												backgroundColor: isToday
@@ -183,7 +174,7 @@ export default function StatsScreen() {
 								</View>
 								<Text
 									style={[
-										styles(theme).dayLabel,
+										styles.dayLabel,
 										isToday && {
 											color: theme.colors.primary,
 											fontWeight: 'bold'
@@ -263,7 +254,7 @@ const CircularProgress = ({
 	)
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			flex: 1,

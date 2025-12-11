@@ -2,65 +2,30 @@ import { Theme, useTheme } from '@react-navigation/native'
 import { useMemo, useState } from 'react'
 import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { Calendar, LocaleConfig } from 'react-native-calendars'
+import { MarkingProps } from 'react-native-calendars/src/calendar/day/marking'
 import { NoteLink } from '~/components'
+import { calendarLocale, formatDateKey } from '~/lib/calendar'
 import { useNotes } from '~/lib/providers/notes-provider'
 
-LocaleConfig.locales['en'] = {
-	monthNames: [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December'
-	],
-	monthNamesShort: [
-		'Jan',
-		'Feb',
-		'Mar',
-		'Apr',
-		'May',
-		'Jun',
-		'Jul',
-		'Aug',
-		'Sep',
-		'Oct',
-		'Nov',
-		'Dec'
-	],
-	dayNames: [
-		'Sunday',
-		'Monday',
-		'Tuesday',
-		'Wednesday',
-		'Thursday',
-		'Friday',
-		'Saturday'
-	],
-	dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-	today: 'Today'
-}
+LocaleConfig.locales['en'] = calendarLocale
 LocaleConfig.defaultLocale = 'en'
 
 export default function CalendarScreen() {
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 	const { notes } = useNotes()
 	const [selectedDate, setSelectedDate] = useState(
 		new Date().toISOString().split('T')[0]
 	)
 
 	const markedDates = useMemo(() => {
-		const marks: any = {}
+		const marks: { [dateKey: string]: MarkingProps } = {}
 
 		notes.forEach(note => {
-			if (note.due.dateOnly) {
-				marks[note.due.dateOnly] = {
+			const dateKey = formatDateKey(note.due.dateOnly || note.due.dateTime)
+
+			if (dateKey) {
+				marks[dateKey] = {
 					marked: true,
 					dotColor: theme.colors.primary
 				}
@@ -71,18 +36,25 @@ export default function CalendarScreen() {
 			...(marks[selectedDate] || {}),
 			selected: true,
 			selectedColor: theme.colors.primary,
+			selectedTextColor: theme.colors.text,
 			disableTouchEvent: true
 		}
 
 		return marks
 	}, [notes, selectedDate, theme.colors.primary])
 
-	const selectedNotes = notes.filter(n => n.due.dateOnly === selectedDate)
+	const selectedNotes = useMemo(() => {
+		return notes.filter(note => {
+			const noteDate = formatDateKey(note.due.dateOnly || note.due.dateTime)
+			return noteDate === selectedDate
+		})
+	}, [notes, selectedDate])
 
 	return (
-		<View style={styles(theme).container}>
-			<Text style={styles(theme).sectionTitle}>Calendar</Text>
+		<View style={styles.container}>
+			<Text style={styles.sectionTitle}>Calendar</Text>
 			<Calendar
+				key={theme.dark ? 'dark' : 'light'}
 				onDayPress={day => setSelectedDate(day.dateString)}
 				markedDates={markedDates}
 				theme={{
@@ -90,18 +62,20 @@ export default function CalendarScreen() {
 					calendarBackground: theme.colors.card,
 					textSectionTitleColor: theme.colors.text,
 					selectedDayBackgroundColor: theme.colors.primary,
-					selectedDayTextColor: '#ffffffff',
+					selectedDayTextColor: theme.colors.text,
 					todayTextColor: theme.colors.primary,
 					dayTextColor: theme.colors.text,
 					textDisabledColor: theme.colors.border,
 					monthTextColor: theme.colors.text,
-					arrowColor: theme.colors.primary
+					arrowColor: theme.colors.primary,
+					dotColor: theme.colors.primary,
+					selectedDotColor: theme.colors.text
 				}}
-				style={styles(theme).calendar}
+				style={styles.calendar}
 			/>
 
-			<View style={styles(theme).listContainer}>
-				<Text style={styles(theme).headerText}>Tasks for {selectedDate}</Text>
+			<View style={styles.listContainer}>
+				<Text style={styles.headerText}>Tasks for {selectedDate}</Text>
 				<FlatList
 					data={selectedNotes}
 					keyExtractor={item => item.id}
@@ -123,7 +97,7 @@ export default function CalendarScreen() {
 	)
 }
 
-const styles = (theme: Theme) => {
+const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			flex: 1,

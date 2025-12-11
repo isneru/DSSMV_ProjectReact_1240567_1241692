@@ -1,4 +1,5 @@
 import { type Theme, useTheme } from '@react-navigation/native'
+import { useMemo } from 'react'
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 export type AlertButton = {
@@ -23,6 +24,7 @@ export const CustomAlert = ({
 	onClose
 }: Props) => {
 	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 
 	return (
 		<Modal
@@ -30,38 +32,34 @@ export const CustomAlert = ({
 			visible={visible}
 			animationType='fade'
 			onRequestClose={onClose}>
-			<View style={styles(theme).overlay}>
-				<View style={styles(theme).alertContainer}>
-					<Text style={styles(theme).title}>{title}</Text>
-					{message && <Text style={styles(theme).message}>{message}</Text>}
+			<View style={styles.overlay}>
+				<View style={styles.alertContainer}>
+					<Text style={styles.title}>{title}</Text>
+					{message && <Text style={styles.message}>{message}</Text>}
 
-					<View style={styles(theme).buttonContainer}>
+					<View style={styles.buttonContainer}>
 						{buttons.length > 0 ? (
 							buttons.map((btn, index) => (
 								<TouchableOpacity
 									key={index}
-									style={[
-										styles(theme).button,
-										index > 0 && styles(theme).buttonBorder
-									]}
+									style={[styles.button, index > 0 && styles.buttonBorder]}
 									onPress={() => {
 										onClose()
 										btn.onPress?.()
 									}}>
 									<Text
 										style={[
-											styles(theme).buttonText,
-											btn.style === 'destructive' &&
-												styles(theme).destructiveText,
-											btn.style === 'cancel' && styles(theme).cancelText
+											styles.buttonText,
+											btn.style === 'destructive' && styles.destructiveText,
+											btn.style === 'cancel' && styles.cancelText
 										]}>
 										{btn.text}
 									</Text>
 								</TouchableOpacity>
 							))
 						) : (
-							<TouchableOpacity style={styles(theme).button} onPress={onClose}>
-								<Text style={styles(theme).buttonText}>OK</Text>
+							<TouchableOpacity style={styles.button} onPress={onClose}>
+								<Text style={styles.buttonText}>OK</Text>
 							</TouchableOpacity>
 						)}
 					</View>
@@ -71,8 +69,8 @@ export const CustomAlert = ({
 	)
 }
 
-const styles = (theme: Theme) =>
-	StyleSheet.create({
+const createStyles = (theme: Theme) => {
+	return StyleSheet.create({
 		overlay: {
 			flex: 1,
 			backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -144,3 +142,4 @@ const styles = (theme: Theme) =>
 			fontWeight: '600'
 		}
 	})
+}

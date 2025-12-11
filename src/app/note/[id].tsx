@@ -5,7 +5,7 @@ import {
 	NewspaperIcon,
 	PencilIcon
 } from 'phosphor-react-native'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
 	Linking,
 	StyleSheet,
@@ -18,10 +18,11 @@ import { useNotes } from '~/lib/providers/notes-provider'
 import { sizes } from '~/lib/theme'
 
 export default function NoteScreen() {
+	const theme = useTheme()
+	const styles = useMemo(() => createStyles(theme), [theme])
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { notes, updateNote, isLoading } = useNotes()
 	const router = useRouter()
-	const theme = useTheme()
 
 	const note = notes.find(note => note.id === id)
 
@@ -54,18 +55,18 @@ export default function NoteScreen() {
 	}
 
 	return (
-		<View style={styles(theme).container}>
-			<View style={styles(theme).header}>
+		<View style={styles.container}>
+			<View style={styles.header}>
 				<TextInput
 					editable={isEditing}
-					style={styles(theme).title}
+					style={styles.title}
 					value={title}
 					onChangeText={setTitle}
 				/>
 
-				<View style={styles(theme).actions}>
+				<View style={styles.actions}>
 					<TouchableOpacity
-						style={styles(theme).button}
+						style={styles.button}
 						onPress={() => setIsEditing(isEditing => !isEditing)}>
 						{isEditing ? (
 							<NewspaperIcon
@@ -78,7 +79,7 @@ export default function NoteScreen() {
 						)}
 					</TouchableOpacity>
 					<TouchableOpacity
-						style={styles(theme).button}
+						style={styles.button}
 						onPress={handleSaveNoteClick}
 						disabled={isLoading}>
 						<FloppyDiskBackIcon
@@ -92,14 +93,14 @@ export default function NoteScreen() {
 
 			{isEditing ? (
 				<TextInput
-					style={styles(theme).input}
+					style={styles.input}
 					value={content}
 					onChangeText={setContent}
 					multiline={true}
 					autoFocus={true}
 				/>
 			) : (
-				<View style={styles(theme).mdContainer}>
+				<View style={styles.mdContainer}>
 					<Markdown
 						theme={themes.defaultTheme}
 						markdown={content}
@@ -111,8 +112,8 @@ export default function NoteScreen() {
 	)
 }
 
-const styles = (theme: Theme) =>
-	StyleSheet.create({
+const createStyles = (theme: Theme) => {
+	return StyleSheet.create({
 		container: {
 			flex: 1,
 			backgroundColor: theme.colors.background
@@ -152,3 +153,4 @@ const styles = (theme: Theme) =>
 		},
 		mdContainer: { flex: 1, paddingHorizontal: 12, paddingTop: 8 }
 	})
+}
