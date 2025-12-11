@@ -13,15 +13,14 @@ import {
 	useEffect,
 	useReducer
 } from 'react'
+import api, { SESSION_KEY } from '~/lib/axios/todoist-client'
 import type { Session } from '~/lib/types'
 
 const endpoints = {
 	auth: 'https://todoist.com/oauth/authorize',
 	token: 'https://todoist.com/oauth/access_token',
-	userData: 'https://api.todoist.com/api/v1/user'
+	user: 'user'
 }
-
-const SESSION_KEY = 'session'
 
 type AuthState = {
 	session: Session | null | undefined
@@ -100,12 +99,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 	const fetchUserProfile = useCallback(async (accessToken: string) => {
 		try {
-			const userResponse = await fetch(endpoints.userData, {
-				headers: {
-					Authorization: `Bearer ${accessToken}`
-				}
+			const { data: userData } = await api.get(endpoints.user, {
+				headers: { Authorization: `Bearer ${accessToken}` }
 			})
-			const userData = await userResponse.json()
 
 			const newSession: Session = {
 				user: {
@@ -128,22 +124,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		async (code: string) => {
 			dispatch({ type: 'SET_LOADING' })
 			try {
-				const tokenResponse = await fetch(endpoints.token, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded'
-					},
-					body: new URLSearchParams({
+				const { data: tokenData } = await api.post(
+					endpoints.token,
+					new URLSearchParams({
 						client_id: process.env.EXPO_PUBLIC_TODOIST_CLIENT_ID!,
 						client_secret: process.env.EXPO_PUBLIC_TODOIST_CLIENT_SECRET!,
 						code,
-						redirect_uri: makeRedirectUri({
-							scheme: 'tickitrevamped'
-						})
-					}).toString()
-				})
-
-				const tokenData = await tokenResponse.json()
+						redirect_uri: makeRedirectUri({ scheme: 'tickitrevamped' })
+					}),
+					{
+						headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+					}
+				)
 
 				if (!tokenData.access_token) {
 					console.error('No access token in response', tokenData)

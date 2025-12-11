@@ -6,6 +6,7 @@ import {
 	useState,
 	type ReactNode
 } from 'react'
+import api from '~/lib/axios/weather-client'
 import { WeatherAPIResponse } from '~/lib/types'
 
 type Weather = {
@@ -71,12 +72,12 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
 		try {
 			const { latitude, longitude } = location.coords
 
-			const response = await fetch(
-				`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${process
-					.env.EXPO_PUBLIC_WEATHER_KEY!}
-`
-			)
-			const data: WeatherAPIResponse = await response.json()
+			const { data } = await api.get<WeatherAPIResponse>('weather', {
+				params: {
+					lat: latitude,
+					lon: longitude
+				}
+			})
 
 			if (data) {
 				setWeather({

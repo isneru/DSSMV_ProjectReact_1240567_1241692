@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 import * as Crypto from 'expo-crypto'
 import {
 	createContext,
@@ -7,6 +8,7 @@ import {
 	useEffect,
 	useReducer
 } from 'react'
+import api from '~/lib/axios/todoist-client'
 import {
 	addPendingDeletion,
 	clearNotes,
@@ -98,46 +100,16 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 		dispatch({ type: 'SET_LOADING', payload: false })
 	}, [])
 
-	const fetchWithAuth = useCallback(
-		async (endpoint: string, options: RequestInit = {}) => {
-			if (!session?.accessToken) {
-				throw new Error('No access token')
-			}
-
-			const response = await fetch(`${BASE_URL}${endpoint}`, {
-				...options,
-				headers: {
-					...options.headers,
-					'Authorization': `Bearer ${session.accessToken}`,
-					'Content-Type': 'application/json'
-				}
-			})
-
-			if (!response.ok) {
-				const errorText = await response.text()
-				console.error(`API Error ${endpoint}:`, errorText)
-				throw new Error(`API Error: ${response.status} ${errorText}`)
-			}
-
-			// handle 204 no content
-			if (response.status === 204) {
-				return null
-			}
-
-			return response.json()
-		},
-		[session?.accessToken]
-	)
-
 	const getUser = useCallback(async (): Promise<TodoistUser> => {
-		return fetchWithAuth('user')
-	}, [fetchWithAuth])
+		const { data } = await api.get('user')
+		return data
+	}, [])
 
 	const getNotes = useCallback(async () => {
 		dispatch({ type: 'SET_LOADING', payload: true })
 		try {
-			const responseData = await fetchWithAuth('tasks')
-			const todoistNotes: TodoistNote[] = responseData.results ?? []
+			const { data } = await api.get('tasks')
+			const todoistNotes: TodoistNote[] = data.results ?? []
 
 			// map todoist notes to app notes
 			const mappedNotes: Note[] = todoistNotes.map(item => ({
@@ -167,7 +139,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 		} finally {
 			dispatch({ type: 'SET_LOADING', payload: false })
 		}
-	}, [fetchWithAuth])
+	}, [])
 
 	const syncLocalNotes = useCallback(async () => {
 		try {
@@ -178,17 +150,14 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 
 			for (const note of localNotes) {
 				try {
-					const body = {
+					const noteToPost = {
 						content: note.title,
 						description: note.content,
 						priority: note.priority,
 						due_string: note.due?.dueString
 					}
 
-					await fetchWithAuth('tasks', {
-						method: 'POST',
-						body: JSON.stringify(body)
-					})
+					await api.post('tasks', noteToPost)
 				} catch (error) {
 					console.error('Failed to sync local note:', note.id, error)
 				}
@@ -196,7 +165,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 		} catch (error) {
 			console.error('Failed to sync local notes:', error)
 		}
-	}, [fetchWithAuth])
+	}, [])
 
 	const syncDeletions = useCallback(async () => {
 		const pendingIds = getPendingDeletions()
@@ -206,19 +175,17 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 
 		for (const id of pendingIds) {
 			try {
-				await fetchWithAuth(`tasks/${id}`, {
-					method: 'DELETE'
-				})
+				await api.delete(`tasks/${id}`)
 				removePendingDeletion(id)
-			} catch (error: any) {
+			} catch (error) {
 				console.error('Failed to sync deletion:', id, error)
 				// If it's a 404, it's already deleted, so we can remove it from pending
-				if (error.message && error.message.includes('404')) {
+				if (isAxiosError(error) && error.response?.status === 404) {
 					removePendingDeletion(id)
 				}
 			}
 		}
-	}, [fetchWithAuth])
+	}, [])
 
 	useEffect(() => {
 		const init = async () => {
@@ -229,7 +196,6 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			}
 		}
 		init()
-		// don't clear notes on unauthenticated to allow local usage
 	}, [status, getNotes, syncLocalNotes, syncDeletions])
 
 	const addNote = useCallback(
@@ -238,17 +204,14 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			try {
 				if (session?.accessToken) {
 					// optimistic update could go here
-					const body = {
+					const noteToPost = {
 						content: note.title,
 						description: note.content,
 						priority: note.priority,
 						due_string: note.due?.dueString
 					}
 
-					await fetchWithAuth('tasks', {
-						method: 'POST',
-						body: JSON.stringify(body)
-					})
+					await api.post('tasks', noteToPost)
 
 					await getNotes() // refresh list
 				} else {
@@ -276,7 +239,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				dispatch({ type: 'SET_LOADING', payload: false })
 			}
 		},
-		[session?.accessToken, fetchWithAuth, getNotes]
+		[session?.accessToken, getNotes]
 	)
 
 	const updateNote = useCallback(
@@ -284,17 +247,14 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			dispatch({ type: 'SET_LOADING', payload: true })
 			try {
 				if (session?.accessToken) {
-					const body = {
+					const noteToPost = {
 						content: note.title,
 						description: note.content,
 						priority: note.priority,
 						due_string: note.due?.dueString
 					}
 
-					await fetchWithAuth(`tasks/${id}`, {
-						method: 'POST',
-						body: JSON.stringify(body)
-					})
+					await api.post(`tasks/${id}`, noteToPost)
 
 					await getNotes() // refresh list
 				} else {
@@ -312,7 +272,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				dispatch({ type: 'SET_LOADING', payload: false })
 			}
 		},
-		[session?.accessToken, fetchWithAuth, getNotes, notes]
+		[session?.accessToken, getNotes, notes]
 	)
 
 	const deleteNote = useCallback(
@@ -320,9 +280,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			dispatch({ type: 'SET_LOADING', payload: true })
 			try {
 				if (session?.accessToken) {
-					await fetchWithAuth(`tasks/${id}`, {
-						method: 'DELETE'
-					})
+					await api.delete(`tasks/${id}`)
 
 					// remove from local state immediately for better UX
 					dispatch({ type: 'DELETE_NOTE', payload: id })
@@ -347,7 +305,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				dispatch({ type: 'SET_LOADING', payload: false })
 			}
 		},
-		[session?.accessToken, fetchWithAuth, getNotes, notes]
+		[session?.accessToken, getNotes, notes]
 	)
 
 	return (

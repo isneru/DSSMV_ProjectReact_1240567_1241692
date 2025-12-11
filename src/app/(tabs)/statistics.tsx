@@ -3,6 +3,7 @@ import { ArrowDownIcon, ArrowUpIcon, FireIcon } from 'phosphor-react-native'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
+import api from '~/lib/axios/todoist-client'
 import { useAuth } from '~/lib/providers/auth-provider'
 import { TodoistStatistics } from '~/lib/types'
 import { rgbOpacity } from '~/lib/utils'
@@ -18,16 +19,7 @@ export default function StatsScreen() {
 
 		setLoading(true)
 		try {
-			const response = await fetch(
-				`https://todoist.com/api/v1/tasks/completed/stats`,
-				{
-					headers: {
-						'Authorization': `Bearer ${session.accessToken}`,
-						'Content-Type': 'application/json'
-					}
-				}
-			)
-			const data = await response.json()
+			const { data } = await api.get('tasks/completed/stats')
 			setStatistics(data)
 		} catch (error) {
 			console.error(error)
