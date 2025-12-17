@@ -1,6 +1,9 @@
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { useTheme, type Theme } from '@react-navigation/native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
+	CalendarBlankIcon,
+	ClockIcon,
 	FloppyDiskBackIcon,
 	NewspaperIcon,
 	PencilIcon,
@@ -42,21 +45,39 @@ export default function NoteScreen() {
 	const [isEditing, setIsEditing] = useState(false)
 	const [content, setContent] = useState(note?.content ?? '')
 	const [title, setTitle] = useState(note?.title ?? '')
-	// Assume que a tag existe ou usa string vazia
 	const [tag, setTag] = useState((note as any)?.tag ?? '')
+
+	const [date, setDate] = useState<Date | undefined>(
+		note?.due?.dateOnly ? new Date(note.due.dateOnly) : undefined
+	)
+	// Tenta obter a hora se existir dateTime, senão undefined
+	const [time, setTime] = useState<Date | undefined>(
+		note?.due?.dateTime && note.due.dateTime.includes('T')
+			? new Date(note.due.dateTime)
+			: undefined
+	)
+
+	const [showDatePicker, setShowDatePicker] = useState(false)
+	const [showTimePicker, setShowTimePicker] = useState(false)
 
 	useEffect(() => {
 		if (note) {
 			setTitle(note.title)
 			setContent(note.content)
 			setTag((note as any)?.tag ?? '')
+
+			// Atualiza Data e Hora ao carregar
+			if (note.due?.dateOnly) {
+				setDate(new Date(note.due.dateOnly))
+			}
+			if (note.due?.dateTime && note.due.dateTime.includes('T')) {
+				setTime(new Date(note.due.dateTime))
+			}
 		}
 	}, [note])
 
 	const { styles, markdownTheme } = useMemo(() => {
 		const appStyles = createStyles(theme, insets)
-
-		// CORREÇÃO 1: Usar 'paragraph' em vez de 'text'
 		const mdTheme = {
 			...themes.defaultTheme,
 			paragraph: {
@@ -73,14 +94,65 @@ export default function NoteScreen() {
 		return { styles: appStyles, markdownTheme: mdTheme }
 	}, [theme, insets])
 
+	const onChangeDate = (event: any, selectedDate?: Date) => {
+		const currentDate = selectedDate || date
+		setShowDatePicker(Platform.OS === 'ios')
+		setDate(currentDate)
+		if (Platform.OS === 'android') setShowDatePicker(false)
+	}
+
+	const onChangeTime = (event: any, selectedTime?: Date) => {
+		const currentTime = selectedTime || time
+		setShowTimePicker(Platform.OS === 'ios')
+		setTime(currentTime)
+		if (Platform.OS === 'android') setShowTimePicker(false)
+	}
+
+	const formatDate = (date: Date) => {
+		return date.toLocaleDateString('pt-PT', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric'
+		})
+	}
+
+	const formatTime = (time: Date) => {
+		return time.toLocaleTimeString('pt-PT', {
+			hour: '2-digit',
+			minute: '2-digit'
+		})
+	}
+
 	async function handleSaveNoteClick() {
 		if (!note) return
 
-		// CORREÇÃO 2: Usar 'as any' para ignorar o erro de tipo da Tag temporariamente
+		let dueData = null
+		if (date) {
+			const year = date.getFullYear()
+			const month = String(date.getMonth() + 1).padStart(2, '0')
+			const day = String(date.getDate()).padStart(2, '0')
+			const dateString = `${year}-${month}-${day}`
+
+			let finalDueString = dateString
+
+			if (time) {
+				const hours = String(time.getHours()).padStart(2, '0')
+				const minutes = String(time.getMinutes()).padStart(2, '0')
+				finalDueString = `${dateString}T${hours}:${minutes}:00`
+			}
+
+			dueData = {
+				dateOnly: dateString,
+				dateTime: finalDueString,
+				dueString: finalDueString
+			}
+		}
+
 		const updatePayload = {
 			title,
 			content,
-			tag
+			tag,
+			due: dueData
 		} as any
 
 		await updateNote(note.id, updatePayload)
@@ -101,7 +173,6 @@ export default function NoteScreen() {
 
 	return (
 		<View style={styles.container}>
-			{/* Header */}
 			<View style={styles.header}>
 				<View style={{ flex: 1 }}>
 					<TextInput
@@ -113,21 +184,75 @@ export default function NoteScreen() {
 						placeholderTextColor={theme.colors.border}
 					/>
 
-					{/* Área da Tag */}
-					<View style={styles.tagContainer}>
-						<TagIcon size={16} color={theme.colors.primary} weight='fill' />
-						{isEditing ? (
-							<TextInput
-								value={tag}
-								onChangeText={setTag}
-								placeholder='Adicionar tag...'
-								placeholderTextColor={theme.colors.border}
-								style={styles.tagInput}
+					<View style={styles.chipsRow}>
+						{/* Chip Tag */}
+						<View style={styles.chip}>
+							<TagIcon size={16} color={theme.colors.primary} weight='fill' />
+							{isEditing ? (
+								<TextInput
+									value={tag}
+									onChangeText={setTag}
+									placeholder='Tag...'
+									placeholderTextColor={theme.colors.border}
+									style={styles.chipInput}
+								/>
+							) : (
+								<Text style={styles.chipText}>
+									{tag.trim() === '' ? 'Sem tag' : tag}
+								</Text>
+							)}
+						</View>
+
+						{/* Chip Data */}
+						<TouchableOpacity
+							style={styles.chip}
+							onPress={() => isEditing && setShowDatePicker(true)}
+							disabled={!isEditing}>
+							<CalendarBlankIcon
+								size={16}
+								color={theme.colors.primary}
+								weight='fill'
 							/>
-						) : (
-							<Text style={styles.tagText}>
-								{tag.trim() === '' ? 'Tag' : tag}
+							<Text style={styles.chipText}>
+								{date ? formatDate(date) : 'Sem data'}
 							</Text>
+						</TouchableOpacity>
+
+						{/* Chip Hour*/}
+						{(isEditing || time) && (
+							<TouchableOpacity
+								style={styles.chip}
+								onPress={() => isEditing && setShowTimePicker(true)}
+								disabled={!isEditing}>
+								<ClockIcon
+									size={16}
+									color={theme.colors.primary}
+									weight='fill'
+								/>
+								<Text style={styles.chipText}>
+									{time ? formatTime(time) : 'Hora'}
+								</Text>
+							</TouchableOpacity>
+						)}
+
+						{/* Pickers */}
+						{showDatePicker && (
+							<DateTimePicker
+								value={date || new Date()}
+								mode='date'
+								display='default'
+								onChange={onChangeDate}
+								themeVariant={theme.dark ? 'dark' : 'light'}
+							/>
+						)}
+						{showTimePicker && (
+							<DateTimePicker
+								value={time || new Date()}
+								mode='time' // Modo tempo
+								display='default'
+								onChange={onChangeTime}
+								themeVariant={theme.dark ? 'dark' : 'light'}
+							/>
 						)}
 					</View>
 				</View>
@@ -216,22 +341,26 @@ const createStyles = (theme: Theme, insets: { top: number }) => {
 			fontWeight: 'bold',
 			marginBottom: 4
 		},
-		tagContainer: {
+		chipsRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 12,
+			flexWrap: 'wrap'
+		},
+		chip: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: 6,
 			paddingVertical: 4,
-			paddingHorizontal: 0,
-			borderRadius: 4,
-			alignSelf: 'flex-start'
+			borderRadius: 4
 		},
-		tagInput: {
+		chipInput: {
 			color: theme.colors.primary,
 			fontSize: sizes.sm,
 			padding: 0,
 			minWidth: 50
 		},
-		tagText: {
+		chipText: {
 			color: theme.colors.primary,
 			fontSize: sizes.sm,
 			fontWeight: '600'
