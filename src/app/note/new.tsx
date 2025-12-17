@@ -11,6 +11,7 @@ import {
 	View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LabelSelector } from '~/components' // <--- 1. Importar componente
 import { useNotes } from '~/lib/providers/notes-provider'
 
 export default function NewNoteScreen() {
@@ -20,6 +21,7 @@ export default function NewNoteScreen() {
 
 	const [title, setTitle] = useState('')
 	const [content, setContent] = useState('')
+	const [label, setLabel] = useState('') // <--- 2. Novo estado para a Label
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
 	const handleBack = () => {
@@ -34,11 +36,22 @@ export default function NewNoteScreen() {
 		if (!title.trim() && !content.trim()) return
 
 		setIsSubmitting(true)
+
+		// Calcular data de hoje para a nota aparecer no calendário
+		const today = new Date()
+		const dateString = today.toISOString().split('T')[0]
+
 		try {
 			await addNote({
 				title,
 				content,
-				priority: 1 // Default priority
+				priority: 1, // Default priority
+				label: label || 'Uncategorized', // <--- 3. Enviar a label
+				due: {
+					dateOnly: dateString,
+					dateTime: '',
+					dueString: dateString
+				}
 			})
 			handleBack()
 		} catch (error) {
@@ -80,6 +93,12 @@ export default function NewNoteScreen() {
 						onChangeText={setTitle}
 						autoFocus
 					/>
+
+					{/* 4. Inserir o Seletor de Label aqui */}
+					<View style={styles(theme).labelContainer}>
+						<LabelSelector value={label} onChange={setLabel} />
+					</View>
+
 					<TextInput
 						style={styles(theme).contentInput}
 						placeholder='Note'
@@ -138,7 +157,10 @@ const styles = (theme: any) =>
 			fontSize: 24,
 			fontWeight: 'bold',
 			color: theme.colors.text,
-			marginBottom: 16
+			marginBottom: 12 // Reduzi um pouco para dar espaço à label
+		},
+		labelContainer: {
+			marginBottom: 16 // Espaço entre a label e o conteúdo da nota
 		},
 		contentInput: {
 			flex: 1,
