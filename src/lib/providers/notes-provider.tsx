@@ -77,8 +77,6 @@ export const NotesContext = createContext<NotesContextType>(
 	{} as NotesContextType
 )
 
-const BASE_URL = 'https://todoist.com/api/v1/'
-
 const INITIAL_STATE: NotesState = {
 	notes: [],
 	isLoading: false
@@ -111,27 +109,26 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			const { data } = await api.get('tasks')
 			const todoistNotes: TodoistNote[] = data.results ?? []
 
-			// map todoist notes to app notes
-			const mappedNotes: Note[] = todoistNotes.map(item => ({
-				id: item.id,
-				userId: item.user_id,
-				title: item.content,
-				content: item.description,
-				priority: item.priority,
+			const mappedNotes: Note[] = todoistNotes.map(todoistNote => ({
+				id: todoistNote.id,
+				userId: todoistNote.user_id,
+				title: todoistNote.content,
+				content: todoistNote.description,
+				priority: todoistNote.priority,
 				label:
-					item.labels && item.labels.length > 0
-						? item.labels[0]
-						: 'Uncategorized', // simple label handling
-				projectId: item.project_id,
+					todoistNote.labels.length > 0 ? todoistNote.labels[0] : 'Unlabeled',
+				projectId: todoistNote.project_id,
 				due: {
-					dateOnly: item.due ? item.due.date : '',
-					dateTime: item.due ? item.due.datetime || item.due.date : '',
-					dueString: item.due ? item.due.string : ''
+					dateOnly: todoistNote.due ? todoistNote.due.date.split('T')[0] : '',
+					dateTime: todoistNote.due
+						? (todoistNote.due.datetime ?? todoistNote.due.date)
+						: '',
+					dueString: todoistNote.due ? todoistNote.due.string : ''
 				}
 			}))
 
 			// update local db
-			clearNotes() // clear local to avoid duplicates if ids changed or deletions happened outside
+			clearNotes()
 			mappedNotes.forEach(note => saveNote(note))
 			dispatch({ type: 'SET_NOTES', payload: mappedNotes })
 		} catch (error) {
@@ -154,7 +151,8 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 						content: note.title,
 						description: note.content,
 						priority: note.priority,
-						due_string: note.due?.dueString
+						due_string: note.due?.dueString,
+						labels: [note.label]
 					}
 
 					await api.post('tasks', noteToPost)
@@ -179,7 +177,6 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				removePendingDeletion(id)
 			} catch (error) {
 				console.error('Failed to sync deletion:', id, error)
-				// If it's a 404, it's already deleted, so we can remove it from pending
 				if (isAxiosError(error) && error.response?.status === 404) {
 					removePendingDeletion(id)
 				}
@@ -201,28 +198,27 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	const addNote = useCallback(
 		async (note: Partial<Note>) => {
 			dispatch({ type: 'SET_LOADING', payload: true })
+
 			try {
 				if (session?.accessToken) {
-					// optimistic update could go here
 					const noteToPost = {
 						content: note.title,
 						description: note.content,
 						priority: note.priority,
-						due_string: note.due?.dueString
+						due_string: note.due?.dueString,
+						labels: [note.label]
 					}
 
 					await api.post('tasks', noteToPost)
-
-					await getNotes() // refresh list
+					await getNotes()
 				} else {
-					// local only
 					const newNote: Note = {
 						id: Crypto.randomUUID(),
 						userId: 'local',
 						title: note.title ?? '',
 						content: note.content ?? '',
 						priority: note.priority ?? 1,
-						label: note.label ?? 'Uncategorized',
+						label: note.label || 'Uncategorized',
 						projectId: 'local',
 						due: note.due ?? {
 							dateOnly: '',
@@ -245,26 +241,39 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	const updateNote = useCallback(
 		async (id: string, note: Partial<Note>) => {
 			dispatch({ type: 'SET_LOADING', payload: true })
+
 			try {
 				if (session?.accessToken) {
-					const noteToPost = {
-						content: note.title,
-						description: note.content,
-						priority: note.priority,
-						due_string: note.due?.dueString
+					const noteToPost: Partial<TodoistNote> = {
+						content: note.title ?? '',
+						description: note.content ?? '',
+						priority: note.priority ?? 1,
+						due: {
+							string: note.due?.dueString ?? '',
+							date: note.due?.dateOnly ?? '',
+							datetime: note.due?.dateTime ?? '',
+							is_recurring: false,
+							timezone: 'Europe/Lisbon'
+						},
+						labels: [note.label ?? 'Unlabeled']
 					}
 
 					await api.post(`tasks/${id}`, noteToPost)
-
-					await getNotes() // refresh list
+					await getNotes()
 				} else {
-					// local update
 					const currentNote = notes.find(n => n.id === id)
 					if (currentNote) {
-						saveNote({ ...currentNote, ...note })
-					}
+						const updatedNote = {
+							...currentNote,
+							...note
+						}
+						saveNote(updatedNote)
 
-					dispatch({ type: 'UPDATE_NOTE', payload: { id, note } })
+						dispatch({
+							type: 'UPDATE_NOTE',
+							payload: { id, note: updatedNote }
+						})
+					}
 				}
 			} catch (error) {
 				console.error('Failed to update note:', error)
@@ -281,16 +290,12 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			try {
 				if (session?.accessToken) {
 					await api.delete(`tasks/${id}`)
-
-					// remove from local state immediately for better UX
 					dispatch({ type: 'DELETE_NOTE', payload: id })
 					deleteNoteDb(id)
 				} else {
-					// local delete
 					dispatch({ type: 'DELETE_NOTE', payload: id })
 					deleteNoteDb(id)
 
-					// If it's a server note (not local-only), track pending deletion
 					const noteToDelete = notes.find(n => n.id === id)
 					if (noteToDelete && noteToDelete.userId !== 'local') {
 						addPendingDeletion(id)
@@ -299,7 +304,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			} catch (error) {
 				console.error('Failed to delete note:', error)
 				if (session?.accessToken) {
-					await getNotes() // re-sync on error
+					await getNotes()
 				}
 			} finally {
 				dispatch({ type: 'SET_LOADING', payload: false })

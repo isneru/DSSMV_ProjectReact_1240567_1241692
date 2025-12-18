@@ -1,5 +1,7 @@
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { Theme, useTheme } from '@react-navigation/native'
 import { Href, useRouter } from 'expo-router'
+import { CalendarBlankIcon, ClockIcon, TagIcon } from 'phosphor-react-native'
 import { useMemo, useState } from 'react'
 import {
 	KeyboardAvoidingView,
@@ -22,7 +24,14 @@ export default function NewNoteScreen() {
 
 	const [title, setTitle] = useState('')
 	const [content, setContent] = useState('')
+	const [label, setLabel] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
+
+	const [date, setDate] = useState<Date | undefined>(undefined)
+	const [time, setTime] = useState<Date | undefined>(undefined)
+
+	const [showDatePicker, setShowDatePicker] = useState(false)
+	const [showTimePicker, setShowTimePicker] = useState(false)
 
 	const handleBack = () => {
 		if (router.canGoBack()) {
@@ -32,15 +41,74 @@ export default function NewNoteScreen() {
 		}
 	}
 
+	const onChangeDate = (event: any, selectedDate?: Date) => {
+		const currentDate = selectedDate || date
+		setShowDatePicker(Platform.OS === 'ios')
+		setDate(currentDate)
+		if (Platform.OS === 'android') setShowDatePicker(false)
+	}
+
+	const onChangeTime = (event: any, selectedTime?: Date) => {
+		const currentTime = selectedTime || time
+		setShowTimePicker(Platform.OS === 'ios')
+		setTime(currentTime)
+		if (Platform.OS === 'android') setShowTimePicker(false)
+	}
+
+	const formatDate = (date: Date) => {
+		return date.toLocaleDateString('pt-PT', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric'
+		})
+	}
+
+	const formatTime = (time: Date) => {
+		return time.toLocaleTimeString('pt-PT', {
+			hour: '2-digit',
+			minute: '2-digit'
+		})
+	}
+
 	const handleSave = async () => {
 		if (!title.trim() && !content.trim()) return
 
 		setIsSubmitting(true)
+
 		try {
+			let dueData = {
+				dateOnly: '',
+				dateTime: '',
+				dueString: ''
+			}
+
+			if (date) {
+				const year = date.getFullYear()
+				const month = String(date.getMonth() + 1).padStart(2, '0')
+				const day = String(date.getDate()).padStart(2, '0')
+				const dateString = `${year}-${month}-${day}`
+
+				let finalDueString = dateString
+
+				if (time) {
+					const hours = String(time.getHours()).padStart(2, '0')
+					const minutes = String(time.getMinutes()).padStart(2, '0')
+					finalDueString = `${dateString}T${hours}:${minutes}:00`
+				}
+
+				dueData = {
+					dateOnly: dateString,
+					dateTime: finalDueString,
+					dueString: finalDueString
+				}
+			}
+
 			await addNote({
 				title,
 				content,
-				priority: 1 // Default priority
+				priority: 1,
+				label: label ?? 'Unlabeled',
+				due: dueData
 			})
 			handleBack()
 		} catch (error) {
@@ -82,6 +150,67 @@ export default function NewNoteScreen() {
 						onChangeText={setTitle}
 						autoFocus
 					/>
+
+					{/* Chips Row: Tag, Data and Hour */}
+					<View style={styles.chipsRow}>
+						{/* Chip Tag */}
+						<View style={styles.chip}>
+							<TagIcon size={16} color={theme.colors.primary} weight='fill' />
+							<TextInput
+								value={label}
+								onChangeText={setLabel}
+								placeholder='Label'
+								placeholderTextColor={theme.colors.border}
+								style={styles.chipInput}
+							/>
+						</View>
+
+						{/* Chip Data */}
+						<TouchableOpacity
+							style={styles.chip}
+							onPress={() => setShowDatePicker(true)}>
+							<CalendarBlankIcon
+								size={16}
+								color={theme.colors.primary}
+								weight='fill'
+							/>
+							<Text style={styles.chipText}>
+								{date ? formatDate(date) : 'Add Date'}
+							</Text>
+						</TouchableOpacity>
+
+						{/* Chip Hour*/}
+						<TouchableOpacity
+							style={styles.chip}
+							onPress={() => setShowTimePicker(true)}>
+							<ClockIcon size={16} color={theme.colors.primary} weight='fill' />
+							<Text style={styles.chipText}>
+								{time ? formatTime(time) : 'Add Time'}
+							</Text>
+						</TouchableOpacity>
+
+						{/* Date Picker */}
+						{showDatePicker && (
+							<DateTimePicker
+								value={date || new Date()}
+								mode='date'
+								display='default'
+								onChange={onChangeDate}
+								themeVariant={theme.dark ? 'dark' : 'light'}
+							/>
+						)}
+						{/* Time Picker */}
+						{showTimePicker && (
+							<DateTimePicker
+								value={time || new Date()}
+								mode='time' // Modo tempo
+								display='default'
+								onChange={onChangeTime}
+								themeVariant={theme.dark ? 'dark' : 'light'}
+							/>
+						)}
+					</View>
+
 					<TextInput
 						style={styles.contentInput}
 						placeholder='Note'
@@ -140,7 +269,32 @@ const createStyles = (theme: Theme) => {
 			fontSize: 24,
 			fontWeight: 'bold',
 			color: theme.colors.text,
-			marginBottom: 16
+			marginBottom: 8
+		},
+		chipsRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 12,
+			marginBottom: 16,
+			flexWrap: 'wrap'
+		},
+		chip: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			paddingVertical: 4,
+			borderRadius: 4
+		},
+		chipInput: {
+			color: theme.colors.primary,
+			fontSize: 14,
+			padding: 0,
+			minWidth: 50
+		},
+		chipText: {
+			color: theme.colors.primary,
+			fontSize: 14,
+			fontWeight: '600'
 		},
 		contentInput: {
 			flex: 1,
