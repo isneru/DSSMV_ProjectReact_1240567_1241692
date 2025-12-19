@@ -2,9 +2,8 @@ import { useTheme, type Theme } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
 import { useMemo } from 'react'
 import { StyleSheet, Text, TouchableOpacity } from 'react-native'
-import { useAlert } from '~/lib/providers/alert-provider'
-import { useNotes } from '~/lib/providers/notes-provider'
-import { sizes } from '~/lib/theme'
+import { useAlert } from '~/lib/context/alert/provider'
+import { useNotes } from '~/lib/context/notes/provider'
 import type { Note } from '~/lib/types'
 
 type Props = {
@@ -57,7 +56,7 @@ const createStyles = (theme: Theme) => {
 		},
 		title: {
 			color: theme.colors.text,
-			fontSize: sizes.md
+			fontSize: 18
 		}
 	})
 }

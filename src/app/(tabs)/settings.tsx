@@ -3,7 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 import { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native'
-import { useAuth } from '~/lib/providers/auth-provider'
+import { useAuth } from '~/lib/context/auth/provider'
 
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled'
 

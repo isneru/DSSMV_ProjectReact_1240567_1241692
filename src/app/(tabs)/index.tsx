@@ -2,9 +2,8 @@ import { Theme, useTheme } from '@react-navigation/native'
 import { useMemo } from 'react'
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { NoteLink, WeatherWidget, WeekRow } from '~/components'
-import { useAuth } from '~/lib/providers/auth-provider'
-import { useNotes } from '~/lib/providers/notes-provider'
-import { sizes } from '~/lib/theme'
+import { useAuth } from '~/lib/context/auth/provider'
+import { useNotes } from '~/lib/context/notes/provider'
 
 export default function Index() {
 	const theme = useTheme()
@@ -60,7 +59,7 @@ const createStyles = (theme: Theme) => {
 		},
 		textGreet: {
 			color: theme.colors.text,
-			fontSize: sizes.md
+			fontSize: 18
 		}
 	})
 }

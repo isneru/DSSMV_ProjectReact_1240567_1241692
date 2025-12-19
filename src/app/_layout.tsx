@@ -7,10 +7,10 @@ import {
 	useSafeAreaInsets
 } from 'react-native-safe-area-context'
 import { BiometricGate } from '~/components'
-import { AlertProvider } from '~/lib/providers/alert-provider'
-import { AuthProvider } from '~/lib/providers/auth-provider'
-import { NotesProvider } from '~/lib/providers/notes-provider'
-import { WeatherProvider } from '~/lib/providers/weather-provider'
+import { AlertProvider } from '~/lib/context/alert/provider'
+import { AuthProvider } from '~/lib/context/auth/provider'
+import { NotesProvider } from '~/lib/context/notes/provider'
+import { WeatherProvider } from '~/lib/context/weather/provider'
 import { theme } from '~/lib/theme'
 
 export default function RootLayout() {

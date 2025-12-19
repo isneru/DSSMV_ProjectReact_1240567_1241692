@@ -80,14 +80,6 @@ export const fonts = Platform.select({
 	}
 }) as Theme['fonts']
 
-export const sizes = {
-	sm: 12,
-	base: 16,
-	md: 18,
-	lg: 24,
-	xl: 32
-}
-
 export const theme: Record<'dark' | 'light', Theme> = {
 	dark: {
 		dark: true,
@@ -99,4 +91,9 @@ export const theme: Record<'dark' | 'light', Theme> = {
 		colors: colors.light,
 		fonts
 	}
+}
+
+export function rgbOpacity(rgbValue: string, opacity: number) {
+	const [r, g, b] = rgbValue.match(/\d+/g)?.map(Number) || []
+	return `rgba(${r}, ${g}, ${b}, ${opacity})`
 }

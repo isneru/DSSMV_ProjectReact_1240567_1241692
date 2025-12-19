@@ -4,31 +4,34 @@ import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { Calendar, LocaleConfig } from 'react-native-calendars'
 import { MarkingProps } from 'react-native-calendars/src/calendar/day/marking'
 import { NoteLink } from '~/components'
-import { calendarLocale, formatDateKey } from '~/lib/calendar'
-import { useNotes } from '~/lib/providers/notes-provider'
+import { calendarLocale } from '~/lib/calendar'
+import { useNotes } from '~/lib/context/notes/provider'
 
 LocaleConfig.locales['en'] = calendarLocale
 LocaleConfig.defaultLocale = 'en'
+
+const toDateString = (date: Date) => {
+	return date.toISOString().split('T')[0]
+}
 
 export default function CalendarScreen() {
 	const theme = useTheme()
 	const styles = useMemo(() => createStyles(theme), [theme])
 	const { notes } = useNotes()
-	const [selectedDate, setSelectedDate] = useState(
-		new Date().toISOString().split('T')[0]
-	)
+
+	const [selectedDate, setSelectedDate] = useState(toDateString(new Date()))
 
 	const markedDates = useMemo(() => {
 		const marks: { [dateKey: string]: MarkingProps } = {}
 
 		notes.forEach(note => {
-			const dateKey = formatDateKey(note.due.dateOnly || note.due.dateTime)
+			if (!note.due) return
 
-			if (dateKey) {
-				marks[dateKey] = {
-					marked: true,
-					dotColor: theme.colors.primary
-				}
+			const dateKey = toDateString(note.due)
+
+			marks[dateKey] = {
+				marked: true,
+				dotColor: theme.colors.primary
 			}
 		})
 
@@ -41,12 +44,12 @@ export default function CalendarScreen() {
 		}
 
 		return marks
-	}, [notes, selectedDate, theme.colors.primary])
+	}, [notes, selectedDate, theme.colors.primary, theme.colors.text])
 
 	const selectedNotes = useMemo(() => {
 		return notes.filter(note => {
-			const noteDate = formatDateKey(note.due.dateOnly || note.due.dateTime)
-			return noteDate === selectedDate
+			if (!note.due) return false
+			return toDateString(note.due) === selectedDate
 		})
 	}, [notes, selectedDate])
 
@@ -80,6 +83,7 @@ export default function CalendarScreen() {
 					data={selectedNotes}
 					keyExtractor={item => item.id}
 					renderItem={({ item }) => <NoteLink note={item} />}
+					contentContainerStyle={{ gap: 8 }}
 					ListEmptyComponent={
 						<Text
 							style={{
@@ -126,18 +130,6 @@ const createStyles = (theme: Theme) => {
 			fontWeight: 'bold',
 			color: theme.colors.text,
 			marginBottom: 8
-		},
-		itemRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 8
-		},
-		day: {
-			width: 32,
-			height: 32,
-			alignItems: 'center',
-			justifyContent: 'center',
-			borderRadius: 16
 		}
 	})
 }

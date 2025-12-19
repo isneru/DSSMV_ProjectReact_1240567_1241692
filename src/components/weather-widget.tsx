@@ -18,8 +18,7 @@ import {
 	TouchableWithoutFeedback,
 	View
 } from 'react-native'
-import { useWeather } from '~/lib/providers/weather-provider'
-import { sizes } from '~/lib/theme'
+import { useWeather } from '~/lib/context/weather/provider'
 
 const weatherIcons: Record<string, Icon> = {
 	Clear: SunIcon,
@@ -105,13 +104,13 @@ const createStyles = (theme: Theme) => {
 		},
 		textTemp: {
 			color: theme.colors.text,
-			fontSize: sizes.md,
+			fontSize: 18,
 			fontWeight: 'bold',
 			lineHeight: 20
 		},
 		textCity: {
 			color: theme.colors.text,
-			fontSize: sizes.sm,
+			fontSize: 12,
 			opacity: 0.7
 		}
 	})

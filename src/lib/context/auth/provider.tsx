@@ -14,43 +14,13 @@ import {
 	useReducer
 } from 'react'
 import api, { SESSION_KEY } from '~/lib/axios/todoist-client'
+import { authReducer, INITIAL_STATE } from '~/lib/context/auth/reducer'
 import type { Session } from '~/lib/types'
 
 const endpoints = {
 	auth: 'https://todoist.com/oauth/authorize',
 	token: 'https://todoist.com/oauth/access_token',
 	user: 'user'
-}
-
-type AuthState = {
-	session: Session | null | undefined
-	status: 'loading' | 'authenticated' | 'unauthenticated'
-}
-
-type AuthAction =
-	| { type: 'SET_LOADING' }
-	| { type: 'SET_UNAUTHENTICATED' }
-	| { type: 'SIGN_IN'; payload: Session }
-	| { type: 'SIGN_OUT' }
-
-const INITIAL_STATE: AuthState = {
-	session: null,
-	status: 'loading'
-}
-
-const authReducer = (state: AuthState, action: AuthAction): AuthState => {
-	switch (action.type) {
-		case 'SET_LOADING':
-			return { ...state, status: 'loading' }
-		case 'SET_UNAUTHENTICATED':
-			return { ...state, status: 'unauthenticated', session: null }
-		case 'SIGN_IN':
-			return { ...state, status: 'authenticated', session: action.payload }
-		case 'SIGN_OUT':
-			return { ...state, status: 'unauthenticated', session: null }
-		default:
-			return state
-	}
 }
 
 type AuthProviderProps = {

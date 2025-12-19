@@ -3,7 +3,7 @@ import type { Note } from '~/lib/types'
 
 const db = SQLite.openDatabaseSync('notes.db')
 
-export const initDb = () => {
+export const init = () => {
 	db.execSync(`
     CREATE TABLE IF NOT EXISTS notes (
       id TEXT PRIMARY KEY NOT NULL,
@@ -11,7 +11,8 @@ export const initDb = () => {
       title TEXT NOT NULL,
       content TEXT NOT NULL,
       label TEXT,
-      due TEXT
+      due TEXT,
+      needsSync INTEGER DEFAULT 0  -- 0: Synced, 1: Needs Sync
     );
 
     CREATE TABLE IF NOT EXISTS pending_deletions (
@@ -23,21 +24,31 @@ export const initDb = () => {
 export const getNotes = (): Note[] => {
 	const result = db.getAllSync('SELECT * FROM notes')
 	return result.map((row: any) => ({
-		...row,
-		due: row.due ? new Date(row.due) : null
+		id: row.id,
+		userId: row.userId,
+		title: row.title,
+		content: row.content,
+		label: row.label ?? null,
+		due: row.due ? new Date(row.due) : null,
+		isSynced: row.needsSync === 0 && row.userId !== 'local'
 	}))
 }
 
-export const saveNote = (note: Note) => {
+export const getDirtyNotes = (): Note[] => {
+	return getNotes().filter(note => note.isSynced === false)
+}
+
+export const saveNote = (note: Note, markAsDirty = true) => {
 	db.runSync(
-		`INSERT OR REPLACE INTO notes (id, userId, title, content, label, due) VALUES (?, ?, ?, ?, ?, ?)`,
+		`INSERT OR REPLACE INTO notes (id, userId, title, content, label, due, needsSync) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		[
 			note.id,
 			note.userId,
 			note.title,
 			note.content,
-			note.label,
-			note.due ? note.due.toISOString() : null
+			note.label ?? null,
+			note.due ? note.due.toISOString() : null,
+			markAsDirty ? 1 : 0
 		]
 	)
 }

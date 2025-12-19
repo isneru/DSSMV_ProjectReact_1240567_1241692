@@ -15,8 +15,8 @@ import {
 	View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNotes } from '~/lib/providers/notes-provider'
-import { rgbOpacity } from '~/lib/utils'
+import { useNotes } from '~/lib/context/notes/provider'
+import { rgbOpacity } from '~/lib/theme'
 
 export default function NewNoteScreen() {
 	const theme = useTheme()

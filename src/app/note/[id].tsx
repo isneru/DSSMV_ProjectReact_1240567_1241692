@@ -25,14 +25,14 @@ import {
 	View
 } from 'react-native'
 import { Markdown, themes } from 'react-native-remark'
-import { useNotes } from '~/lib/providers/notes-provider'
+import { useNotes } from '~/lib/context/notes/provider'
 import { Note } from '~/lib/types/notes'
 
 export default function NoteScreen() {
 	const theme = useTheme()
+	const router = useRouter()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { notes, updateNote, isLoading } = useNotes()
-	const router = useRouter()
 
 	const [isEditing, setIsEditing] = useState(false)
 	const [showDatePicker, setShowDatePicker] = useState(false)
@@ -55,7 +55,6 @@ export default function NoteScreen() {
 			setTitle(note.title)
 			setContent(note.content)
 			setLabel(note.label)
-			// Se a nota tiver data, preenchemos a data e a hora
 			if (note.due) {
 				setDate(note.due)
 				setTime(note.due)
@@ -91,7 +90,6 @@ export default function NoteScreen() {
 		setShowDatePicker(Platform.OS === 'ios')
 		setDate(currentDate)
 
-		// Se definirmos uma data e não houver hora, definimos uma hora padrão (ex: 9:00 ou hora atual)
 		if (currentDate && !time) {
 			setTime(currentDate)
 		}
@@ -126,7 +124,7 @@ export default function NoteScreen() {
 		})
 	}
 
-	async function handleSaveNoteClick() {
+	function handleSaveNoteClick() {
 		if (!note) return
 
 		let finalDate: Date | null = null
@@ -148,7 +146,7 @@ export default function NoteScreen() {
 			due: finalDate
 		}
 		console.log('Saving note:', newNote)
-		await updateNote(note.id, newNote)
+		updateNote(note.id, newNote)
 		setIsEditing(false)
 	}
 
@@ -237,7 +235,7 @@ export default function NoteScreen() {
 						{showTimePicker && (
 							<DateTimePicker
 								value={time || new Date()}
-								mode='time' // Modo tempo
+								mode='time'
 								display='default'
 								onChange={onChangeTime}
 								themeVariant={theme.dark ? 'dark' : 'light'}
