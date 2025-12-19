@@ -131,7 +131,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						client_secret: process.env.EXPO_PUBLIC_TODOIST_CLIENT_SECRET!,
 						code,
 						redirect_uri: makeRedirectUri({ scheme: 'tickitrevamped' })
-					}),
+					}).toString(),
 					{
 						headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
 					}

@@ -1,5 +1,4 @@
 import { isAxiosError } from 'axios'
-import * as Crypto from 'expo-crypto'
 import {
 	createContext,
 	ReactNode,
@@ -12,13 +11,14 @@ import api from '~/lib/axios/todoist-client'
 import {
 	addPendingDeletion,
 	clearNotes,
-	deleteNote as deleteNoteDb,
-	getNotes as getNotesDb,
+	deleteNote as deleteNoteFromDB,
+	getNotes as getNotesFromDB,
 	getPendingDeletions,
 	initDb,
 	removePendingDeletion,
 	saveNote
 } from '~/lib/db'
+import { NoteEntity } from '~/lib/models'
 import { useAuth } from '~/lib/providers/auth-provider'
 import type { Note, TodoistNote, TodoistUser } from '~/lib/types'
 
@@ -31,7 +31,7 @@ type NotesAction =
 	| { type: 'SET_LOADING'; payload: boolean }
 	| { type: 'SET_NOTES'; payload: Note[] }
 	| { type: 'ADD_NOTE'; payload: Note }
-	| { type: 'UPDATE_NOTE'; payload: { id: string; note: Partial<Note> } }
+	| { type: 'UPDATE_NOTE'; payload: { id: string; note: Note } }
 	| { type: 'DELETE_NOTE'; payload: string }
 
 const notesReducer = (state: NotesState, action: NotesAction): NotesState => {
@@ -69,7 +69,7 @@ type NotesContextType = {
 	getNotes: () => Promise<void>
 	getUser: () => Promise<TodoistUser>
 	addNote: (note: Partial<Note>) => Promise<void>
-	updateNote: (id: string, note: Partial<Note>) => Promise<void>
+	updateNote: (id: string, note: Note) => Promise<void>
 	deleteNote: (id: string) => Promise<void>
 }
 
@@ -93,7 +93,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	useEffect(() => {
 		dispatch({ type: 'SET_LOADING', payload: true })
 		initDb()
-		const localNotes = getNotesDb()
+		const localNotes = getNotesFromDB()
 		dispatch({ type: 'SET_NOTES', payload: localNotes })
 		dispatch({ type: 'SET_LOADING', payload: false })
 	}, [])
@@ -107,25 +107,9 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 		dispatch({ type: 'SET_LOADING', payload: true })
 		try {
 			const { data } = await api.get('tasks')
-			const todoistNotes: TodoistNote[] = data.results ?? []
+			const todoistNotes: TodoistNote<'GET'>[] = data.results ?? []
 
-			const mappedNotes: Note[] = todoistNotes.map(todoistNote => ({
-				id: todoistNote.id,
-				userId: todoistNote.user_id,
-				title: todoistNote.content,
-				content: todoistNote.description,
-				priority: todoistNote.priority,
-				label:
-					todoistNote.labels.length > 0 ? todoistNote.labels[0] : 'Unlabeled',
-				projectId: todoistNote.project_id,
-				due: {
-					dateOnly: todoistNote.due ? todoistNote.due.date.split('T')[0] : '',
-					dateTime: todoistNote.due
-						? (todoistNote.due.datetime ?? todoistNote.due.date)
-						: '',
-					dueString: todoistNote.due ? todoistNote.due.string : ''
-				}
-			}))
+			const mappedNotes = todoistNotes.map(note => NoteEntity.fromTodoist(note))
 
 			// update local db
 			clearNotes()
@@ -140,20 +124,14 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 
 	const syncLocalNotes = useCallback(async () => {
 		try {
-			const localNotes = getNotesDb().filter(n => n.userId === 'local')
+			const localNotes = getNotesFromDB().filter(n => n.userId === 'local')
 			if (localNotes.length === 0) return
 
 			console.log(`Syncing ${localNotes.length} local notes to Todoist...`)
 
 			for (const note of localNotes) {
 				try {
-					const noteToPost = {
-						content: note.title,
-						description: note.content,
-						priority: note.priority,
-						due_string: note.due?.dueString,
-						labels: [note.label]
-					}
+					const noteToPost = new NoteEntity(note).toTodoistFormat()
 
 					await api.post('tasks', noteToPost)
 				} catch (error) {
@@ -201,31 +179,12 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 
 			try {
 				if (session?.accessToken) {
-					const noteToPost = {
-						content: note.title,
-						description: note.content,
-						priority: note.priority,
-						due_string: note.due?.dueString,
-						labels: [note.label]
-					}
+					const noteToPost = new NoteEntity(note).toTodoistFormat()
 
 					await api.post('tasks', noteToPost)
 					await getNotes()
 				} else {
-					const newNote: Note = {
-						id: Crypto.randomUUID(),
-						userId: 'local',
-						title: note.title ?? '',
-						content: note.content ?? '',
-						priority: note.priority ?? 1,
-						label: note.label || 'Uncategorized',
-						projectId: 'local',
-						due: note.due ?? {
-							dateOnly: '',
-							dateTime: '',
-							dueString: ''
-						}
-					}
+					const newNote = NoteEntity.createLocal(note)
 					saveNote(newNote)
 					dispatch({ type: 'ADD_NOTE', payload: newNote })
 				}
@@ -239,34 +198,24 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	)
 
 	const updateNote = useCallback(
-		async (id: string, note: Partial<Note>) => {
+		async (id: string, note: Note) => {
 			dispatch({ type: 'SET_LOADING', payload: true })
 
 			try {
 				if (session?.accessToken) {
-					const noteToPost: Partial<TodoistNote> = {
-						content: note.title ?? '',
-						description: note.content ?? '',
-						priority: note.priority ?? 1,
-						due: {
-							string: note.due?.dueString ?? '',
-							date: note.due?.dateOnly ?? '',
-							datetime: note.due?.dateTime ?? '',
-							is_recurring: false,
-							timezone: 'Europe/Lisbon'
-						},
-						labels: [note.label ?? 'Unlabeled']
-					}
+					const noteToPost = new NoteEntity(note).toTodoistFormat()
 
 					await api.post(`tasks/${id}`, noteToPost)
 					await getNotes()
 				} else {
 					const currentNote = notes.find(n => n.id === id)
+
 					if (currentNote) {
-						const updatedNote = {
+						const updatedNote = new NoteEntity({
 							...currentNote,
 							...note
-						}
+						})
+
 						saveNote(updatedNote)
 
 						dispatch({
@@ -291,12 +240,13 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				if (session?.accessToken) {
 					await api.delete(`tasks/${id}`)
 					dispatch({ type: 'DELETE_NOTE', payload: id })
-					deleteNoteDb(id)
+					deleteNoteFromDB(id)
 				} else {
 					dispatch({ type: 'DELETE_NOTE', payload: id })
-					deleteNoteDb(id)
+					deleteNoteFromDB(id)
 
 					const noteToDelete = notes.find(n => n.id === id)
+
 					if (noteToDelete && noteToDelete.userId !== 'local') {
 						addPendingDeletion(id)
 					}

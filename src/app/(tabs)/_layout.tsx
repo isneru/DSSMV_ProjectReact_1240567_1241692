@@ -35,6 +35,7 @@ export default function TabLayout() {
 			tabBar={props => <Navbar {...props} />}
 			tabBarPosition='bottom'
 			screenOptions={{
+				lazy: true,
 				swipeEnabled: true,
 				animationEnabled: true,
 				tabBarActiveTintColor: theme.colors.text,

@@ -10,9 +10,7 @@ export const initDb = () => {
       userId TEXT NOT NULL,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
-      priority INTEGER NOT NULL,
-      label TEXT NOT NULL,
-      projectId TEXT NOT NULL,
+      label TEXT,
       due TEXT
     );
 
@@ -26,22 +24,20 @@ export const getNotes = (): Note[] => {
 	const result = db.getAllSync('SELECT * FROM notes')
 	return result.map((row: any) => ({
 		...row,
-		due: row.due ? JSON.parse(row.due) : null
+		due: row.due ? new Date(row.due) : null
 	}))
 }
 
 export const saveNote = (note: Note) => {
 	db.runSync(
-		`INSERT OR REPLACE INTO notes (id, userId, title, content, priority, label, projectId, due) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT OR REPLACE INTO notes (id, userId, title, content, label, due) VALUES (?, ?, ?, ?, ?, ?)`,
 		[
 			note.id,
 			note.userId,
 			note.title,
 			note.content,
-			note.priority,
 			note.label,
-			note.projectId,
-			JSON.stringify(note.due)
+			note.due ? note.due.toISOString() : null
 		]
 	)
 }

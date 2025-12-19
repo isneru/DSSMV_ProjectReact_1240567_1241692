@@ -1,4 +1,6 @@
-import DateTimePicker from '@react-native-community/datetimepicker'
+import DateTimePicker, {
+	DateTimePickerEvent
+} from '@react-native-community/datetimepicker'
 import { useTheme, type Theme } from '@react-navigation/native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
@@ -24,7 +26,7 @@ import {
 } from 'react-native'
 import { Markdown, themes } from 'react-native-remark'
 import { useNotes } from '~/lib/providers/notes-provider'
-import { sizes } from '~/lib/theme'
+import { Note } from '~/lib/types/notes'
 
 export default function NoteScreen() {
 	const theme = useTheme()
@@ -32,74 +34,77 @@ export default function NoteScreen() {
 	const { notes, updateNote, isLoading } = useNotes()
 	const router = useRouter()
 
+	const [isEditing, setIsEditing] = useState(false)
+	const [showDatePicker, setShowDatePicker] = useState(false)
+	const [showTimePicker, setShowTimePicker] = useState(false)
+	const [content, setContent] = useState<Note['content']>('')
+	const [title, setTitle] = useState<Note['title']>('')
+	const [label, setLabel] = useState<Note['label']>('')
+	const [date, setDate] = useState<Date | undefined>(undefined)
+	const [time, setTime] = useState<Date | undefined>(undefined)
+
 	const note = notes.find(note => note.id === id)
 
 	useEffect(() => {
 		if (!isLoading && !note) {
 			router.replace('/')
+			return
 		}
-	}, [isLoading, note, router])
 
-	const [isEditing, setIsEditing] = useState(false)
-	const [content, setContent] = useState(note?.content ?? '')
-	const [title, setTitle] = useState(note?.title ?? '')
-	const [label, setLabel] = useState(note?.label ?? '')
-
-	const [date, setDate] = useState<Date | undefined>(
-		note?.due?.dateOnly ? new Date(note.due.dateOnly) : undefined
-	)
-	// Tenta obter a hora se existir dateTime, senão undefined
-	const [time, setTime] = useState<Date | undefined>(
-		note?.due?.dateTime && note.due.dateTime.includes('T')
-			? new Date(note.due.dateTime)
-			: undefined
-	)
-
-	const [showDatePicker, setShowDatePicker] = useState(false)
-	const [showTimePicker, setShowTimePicker] = useState(false)
-
-	useEffect(() => {
 		if (note) {
 			setTitle(note.title)
 			setContent(note.content)
 			setLabel(note.label)
-
-			// Atualiza Data e Hora ao carregar
-			if (note.due?.dateOnly) {
-				setDate(new Date(note.due.dateOnly))
-			}
-			if (note.due?.dateTime && note.due.dateTime.includes('T')) {
-				setTime(new Date(note.due.dateTime))
+			// Se a nota tiver data, preenchemos a data e a hora
+			if (note.due) {
+				setDate(note.due)
+				setTime(note.due)
 			}
 		}
-	}, [note])
+	}, [note, isLoading, router])
 
 	const { styles, markdownTheme } = useMemo(() => {
 		const styles = createStyles(theme)
-		const mdTheme = {
+		const markdownTheme = {
 			...themes.defaultTheme,
 			paragraph: {
 				color: theme.colors.text,
-				fontSize: sizes.md,
-				lineHeight: sizes.md * 1.5
+				fontSize: 18,
+				lineHeight: 18 * 1.5
 			},
 			listItem: {
 				color: theme.colors.text,
-				fontSize: sizes.md,
-				lineHeight: sizes.md * 1.5
+				fontSize: 18,
+				lineHeight: 18 * 1.5
 			}
 		}
-		return { styles, markdownTheme: mdTheme }
+		return { styles, markdownTheme }
 	}, [theme])
 
-	const onChangeDate = (event: any, selectedDate?: Date) => {
+	const onChangeDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
+		if (event.type === 'dismissed') {
+			setShowDatePicker(false)
+			return
+		}
+
 		const currentDate = selectedDate || date
 		setShowDatePicker(Platform.OS === 'ios')
 		setDate(currentDate)
+
+		// Se definirmos uma data e não houver hora, definimos uma hora padrão (ex: 9:00 ou hora atual)
+		if (currentDate && !time) {
+			setTime(currentDate)
+		}
+
 		if (Platform.OS === 'android') setShowDatePicker(false)
 	}
 
-	const onChangeTime = (event: any, selectedTime?: Date) => {
+	const onChangeTime = (event: DateTimePickerEvent, selectedTime?: Date) => {
+		if (event.type === 'dismissed') {
+			setShowTimePicker(false)
+			return
+		}
+
 		const currentTime = selectedTime || time
 		setShowTimePicker(Platform.OS === 'ios')
 		setTime(currentTime)
@@ -109,7 +114,7 @@ export default function NoteScreen() {
 	const formatDate = (date: Date) => {
 		return date.toLocaleDateString('pt-PT', {
 			day: '2-digit',
-			month: '2-digit',
+			month: 'short',
 			year: 'numeric'
 		})
 	}
@@ -124,41 +129,26 @@ export default function NoteScreen() {
 	async function handleSaveNoteClick() {
 		if (!note) return
 
-		let dueData = {
-			dateOnly: '',
-			dateTime: '',
-			dueString: ''
-		}
+		let finalDate: Date | null = null
 
 		if (date) {
-			const year = date.getFullYear()
-			const month = String(date.getMonth() + 1).padStart(2, '0')
-			const day = String(date.getDate()).padStart(2, '0')
-			const dateString = `${year}-${month}-${day}`
-
-			let finalDueString = dateString
-
+			finalDate = new Date(date)
 			if (time) {
-				const hours = String(time.getHours()).padStart(2, '0')
-				const minutes = String(time.getMinutes()).padStart(2, '0')
-				finalDueString = `${dateString}T${hours}:${minutes}:00`
-			}
-
-			dueData = {
-				dateOnly: dateString,
-				dateTime: finalDueString,
-				dueString: finalDueString
+				finalDate.setHours(time.getHours())
+				finalDate.setMinutes(time.getMinutes())
+				finalDate.setSeconds(0)
 			}
 		}
 
-		const updatePayload = {
+		const newNote: Note = {
+			...note,
 			title,
 			content,
 			label,
-			due: dueData
+			due: finalDate
 		}
-
-		await updateNote(note.id, updatePayload)
+		console.log('Saving note:', newNote)
+		await updateNote(note.id, newNote)
 		setIsEditing(false)
 	}
 
@@ -192,15 +182,15 @@ export default function NoteScreen() {
 							<TagIcon size={16} color={theme.colors.primary} weight='fill' />
 							{isEditing ? (
 								<TextInput
-									value={label}
+									value={label ?? 'Unlabeled'}
 									onChangeText={setLabel}
-									placeholder='Tag...'
+									placeholder='Label'
 									placeholderTextColor={theme.colors.border}
 									style={styles.chipInput}
 								/>
 							) : (
 								<Text style={styles.chipText}>
-									{label.trim() === '' ? 'Unlabeled' : label}
+									{label?.trim() === '' ? 'Unlabeled' : label}
 								</Text>
 							)}
 						</View>
@@ -335,7 +325,7 @@ const createStyles = (theme: Theme) => {
 		},
 		title: {
 			color: theme.colors.text,
-			fontSize: sizes.xl,
+			fontSize: 32,
 			fontWeight: 'bold',
 			marginBottom: 4
 		},
@@ -354,13 +344,13 @@ const createStyles = (theme: Theme) => {
 		},
 		chipInput: {
 			color: theme.colors.primary,
-			fontSize: sizes.sm,
+			fontSize: 12,
 			padding: 0,
 			minWidth: 50
 		},
 		chipText: {
 			color: theme.colors.primary,
-			fontSize: sizes.sm,
+			fontSize: 12,
 			fontWeight: '600'
 		},
 		actions: {
@@ -379,7 +369,7 @@ const createStyles = (theme: Theme) => {
 		},
 		input: {
 			color: theme.colors.text,
-			fontSize: sizes.md,
+			fontSize: 18,
 			flex: 1,
 			textAlignVertical: 'top',
 			padding: 16,

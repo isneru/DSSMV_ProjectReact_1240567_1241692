@@ -1,4 +1,6 @@
-import DateTimePicker from '@react-native-community/datetimepicker'
+import DateTimePicker, {
+	DateTimePickerEvent
+} from '@react-native-community/datetimepicker'
 import { Theme, useTheme } from '@react-navigation/native'
 import { Href, useRouter } from 'expo-router'
 import { CalendarBlankIcon, ClockIcon, TagIcon } from 'phosphor-react-native'
@@ -41,30 +43,41 @@ export default function NewNoteScreen() {
 		}
 	}
 
-	const onChangeDate = (event: any, selectedDate?: Date) => {
+	const onChangeDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
+		if (event.type === 'dismissed') {
+			setShowDatePicker(false)
+			return
+		}
+
 		const currentDate = selectedDate || date
 		setShowDatePicker(Platform.OS === 'ios')
 		setDate(currentDate)
+
 		if (Platform.OS === 'android') setShowDatePicker(false)
 	}
 
-	const onChangeTime = (event: any, selectedTime?: Date) => {
+	const onChangeTime = (event: DateTimePickerEvent, selectedTime?: Date) => {
+		if (event.type === 'dismissed') {
+			setShowTimePicker(false)
+			return
+		}
+
 		const currentTime = selectedTime || time
 		setShowTimePicker(Platform.OS === 'ios')
 		setTime(currentTime)
 		if (Platform.OS === 'android') setShowTimePicker(false)
 	}
 
-	const formatDate = (date: Date) => {
-		return date.toLocaleDateString('pt-PT', {
+	const formatDate = (d: Date) => {
+		return d.toLocaleDateString('pt-PT', {
 			day: '2-digit',
 			month: '2-digit',
 			year: 'numeric'
 		})
 	}
 
-	const formatTime = (time: Date) => {
-		return time.toLocaleTimeString('pt-PT', {
+	const formatTime = (t: Date) => {
+		return t.toLocaleTimeString('pt-PT', {
 			hour: '2-digit',
 			minute: '2-digit'
 		})
@@ -76,40 +89,24 @@ export default function NewNoteScreen() {
 		setIsSubmitting(true)
 
 		try {
-			let dueData = {
-				dateOnly: '',
-				dateTime: '',
-				dueString: ''
-			}
+			let finalDate: Date | null = null
 
 			if (date) {
-				const year = date.getFullYear()
-				const month = String(date.getMonth() + 1).padStart(2, '0')
-				const day = String(date.getDate()).padStart(2, '0')
-				const dateString = `${year}-${month}-${day}`
-
-				let finalDueString = dateString
-
+				finalDate = new Date(date)
 				if (time) {
-					const hours = String(time.getHours()).padStart(2, '0')
-					const minutes = String(time.getMinutes()).padStart(2, '0')
-					finalDueString = `${dateString}T${hours}:${minutes}:00`
-				}
-
-				dueData = {
-					dateOnly: dateString,
-					dateTime: finalDueString,
-					dueString: finalDueString
+					finalDate.setHours(time.getHours())
+					finalDate.setMinutes(time.getMinutes())
+					finalDate.setSeconds(0)
 				}
 			}
 
 			await addNote({
 				title,
 				content,
-				priority: 1,
-				label: label ?? 'Unlabeled',
-				due: dueData
+				label,
+				due: finalDate
 			})
+
 			handleBack()
 		} catch (error) {
 			console.error('Failed to create note:', error)
@@ -151,9 +148,7 @@ export default function NewNoteScreen() {
 						autoFocus
 					/>
 
-					{/* Chips Row: Tag, Data and Hour */}
 					<View style={styles.chipsRow}>
-						{/* Chip Tag */}
 						<View style={styles.chip}>
 							<TagIcon size={16} color={theme.colors.primary} weight='fill' />
 							<TextInput
@@ -165,7 +160,6 @@ export default function NewNoteScreen() {
 							/>
 						</View>
 
-						{/* Chip Data */}
 						<TouchableOpacity
 							style={styles.chip}
 							onPress={() => setShowDatePicker(true)}>
@@ -179,7 +173,6 @@ export default function NewNoteScreen() {
 							</Text>
 						</TouchableOpacity>
 
-						{/* Chip Hour*/}
 						<TouchableOpacity
 							style={styles.chip}
 							onPress={() => setShowTimePicker(true)}>
@@ -189,7 +182,6 @@ export default function NewNoteScreen() {
 							</Text>
 						</TouchableOpacity>
 
-						{/* Date Picker */}
 						{showDatePicker && (
 							<DateTimePicker
 								value={date || new Date()}
@@ -199,11 +191,10 @@ export default function NewNoteScreen() {
 								themeVariant={theme.dark ? 'dark' : 'light'}
 							/>
 						)}
-						{/* Time Picker */}
 						{showTimePicker && (
 							<DateTimePicker
 								value={time || new Date()}
-								mode='time' // Modo tempo
+								mode='time'
 								display='default'
 								onChange={onChangeTime}
 								themeVariant={theme.dark ? 'dark' : 'light'}

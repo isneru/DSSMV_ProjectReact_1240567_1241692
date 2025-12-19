@@ -1,31 +1,44 @@
-export type TodoistNote = {
+export type TodoistMode = 'GET' | 'POST'
+
+interface TodoistBase {
 	id: string
-	user_id: string
-	project_id: string
 	content: string
 	description: string
 	priority: number
-	due: {
-		date: string
-		is_recurring: boolean
-		datetime: string
-		string: string
-		timezone: string
-	} | null
+	labels: string[]
+	project_id: string | null
+	section_id: string | null
 	parent_id: string | null
 	child_order: number
-	section_id: string | null
 	day_order: number
 	collapsed: boolean
-	labels: string[]
-	added_by_uid: string
 	assigned_by_uid: string | null
 	responsible_uid: string | null
-	checked: boolean
-	is_deleted: boolean
-	sync_id: string | null
-	added_at: string
 }
+
+export type TodoistNote<T extends TodoistMode> = TodoistBase &
+	(T extends 'GET'
+		? {
+				user_id: string
+				is_deleted: boolean
+				checked: boolean
+				added_at: string
+				added_by_uid: string
+				due: {
+					date: string // "2025-12-11T18:15:00"
+					timezone: string | null // null
+					string: string // "11 Dec 18:15"
+					lang: string // "en"
+					is_recurring: boolean // false
+				} | null
+			}
+		: {
+				due_date: string | null
+				due_datetime: string | null
+				due_string: string | null
+				due_lang: string | null
+				due?: never
+			})
 
 export type TodoistUser = {
 	id: string
