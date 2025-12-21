@@ -40,7 +40,44 @@ export const calendarLocale = {
 	today: 'Today'
 }
 
-export function formatDateKey(dateString: string) {
-	if (!dateString) return ''
-	return dateString.split('T')[0] // YYYY-MM-DDThh:mm:ssZ -> YYYY-MM-DD
+export function extractTime(date: Date | null) {
+	if (!date) return '00:00:00'
+
+	const dateISO = date.toISOString()
+	const timePart = dateISO.split('T')[1] // YYYY-MM-DDThh:mm:ssZ -> hh:mm:ssZ
+	return timePart.split('Z')[0] // hh:mm:ssZ -> hh:mm:ss
+}
+
+export function extractDate(date: Date | null) {
+	if (!date) {
+		const now = new Date()
+		return now.toISOString().split('T')[0]
+	}
+
+	const dateISO = date.toISOString()
+	const datePart = dateISO.split('T')[0] // YYYY-MM-DDThh:mm:ssZ -> YYYY-MM-DD
+	return datePart
+}
+
+export function combineDateAndTime(date: string, time: string) {
+	return new Date(`${date}T${time}`)
+}
+
+export function formatDate(date: Date) {
+	return date.toLocaleDateString('pt-PT', {
+		day: '2-digit',
+		month: 'short',
+		year: 'numeric'
+	})
+}
+
+export function formatTime(time: Date) {
+	return time.toLocaleTimeString('pt-PT', {
+		hour: '2-digit',
+		minute: '2-digit'
+	})
+}
+
+export function toDateString(date: Date) {
+	return date.toISOString().split('T')[0]
 }

@@ -30,7 +30,7 @@ export const Navbar = ({
 		return null
 	}
 
-	const getPath = () => {
+	function getPath() {
 		const navWidth = width - MARGIN * 2
 		const center = navWidth / 2
 		const STROKE_WIDTH = 1
@@ -102,7 +102,7 @@ export const Navbar = ({
 					const { options } = descriptors[route.key]
 					const isFocused = state.index === index
 
-					const onPress = () => {
+					function onPress() {
 						const event = navigation.emit({
 							type: 'tabPress',
 							target: route.key,

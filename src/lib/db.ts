@@ -3,7 +3,7 @@ import type { Note } from '~/lib/types'
 
 const db = SQLite.openDatabaseSync('notes.db')
 
-export const init = () => {
+export function init() {
 	db.execSync(`
     CREATE TABLE IF NOT EXISTS notes (
       id TEXT PRIMARY KEY NOT NULL,
@@ -21,7 +21,7 @@ export const init = () => {
   `)
 }
 
-export const getNotes = (): Note[] => {
+export function getNotes(): Note[] {
 	const result = db.getAllSync('SELECT * FROM notes')
 	return result.map((row: any) => ({
 		id: row.id,
@@ -34,11 +34,11 @@ export const getNotes = (): Note[] => {
 	}))
 }
 
-export const getDirtyNotes = (): Note[] => {
+export function getDirtyNotes(): Note[] {
 	return getNotes().filter(note => note.isSynced === false)
 }
 
-export const saveNote = (note: Note, markAsDirty = true) => {
+export function saveNote(note: Note, markAsDirty = true) {
 	db.runSync(
 		`INSERT OR REPLACE INTO notes (id, userId, title, content, label, due, needsSync) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		[
@@ -53,23 +53,23 @@ export const saveNote = (note: Note, markAsDirty = true) => {
 	)
 }
 
-export const deleteNote = (id: string) => {
+export function deleteNote(id: string) {
 	db.runSync('DELETE FROM notes WHERE id = ?', [id])
 }
 
-export const clearNotes = () => {
+export function clearNotes() {
 	db.runSync('DELETE FROM notes')
 }
 
-export const addPendingDeletion = (id: string) => {
+export function addPendingDeletion(id: string) {
 	db.runSync('INSERT OR IGNORE INTO pending_deletions (id) VALUES (?)', [id])
 }
 
-export const getPendingDeletions = (): string[] => {
+export function getPendingDeletions(): string[] {
 	const result = db.getAllSync('SELECT id FROM pending_deletions')
 	return result.map((row: any) => row.id)
 }
 
-export const removePendingDeletion = (id: string) => {
+export function removePendingDeletion(id: string) {
 	db.runSync('DELETE FROM pending_deletions WHERE id = ?', [id])
 }

@@ -1,219 +1,142 @@
-import DateTimePicker, {
-	DateTimePickerEvent
-} from '@react-native-community/datetimepicker'
 import { Theme, useTheme } from '@react-navigation/native'
-import { Href, useRouter } from 'expo-router'
-import { CalendarBlankIcon, ClockIcon, TagIcon } from 'phosphor-react-native'
+import { useRouter } from 'expo-router'
+import {
+	FloppyDiskBackIcon,
+	NewspaperIcon,
+	PencilIcon
+} from 'phosphor-react-native'
 import { useMemo, useState } from 'react'
 import {
 	KeyboardAvoidingView,
+	Linking,
 	Platform,
+	ScrollView,
 	StyleSheet,
-	Text,
 	TextInput,
 	TouchableOpacity,
 	View
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { Markdown, themes as mdThemes } from 'react-native-remark'
+import { DatePicker, LabelPicker, TimePicker } from '~/components'
 import { useNotes } from '~/lib/context/notes/provider'
-import { rgbOpacity } from '~/lib/theme'
+import { Note } from '~/lib/types'
 
 export default function NewNoteScreen() {
 	const theme = useTheme()
-	const styles = useMemo(() => createStyles(theme), [theme])
+	const { styles, markdownTheme } = useMemo(() => {
+		const styles = createStyles(theme)
+		const markdownTheme = mdTheme(theme)
+		return { styles, markdownTheme }
+	}, [theme])
 	const router = useRouter()
-	const { addNote } = useNotes()
+	const { addNote, isLoading } = useNotes()
 
-	const [title, setTitle] = useState('')
-	const [content, setContent] = useState('')
-	const [label, setLabel] = useState('')
-	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [isEditing, setIsEditing] = useState(true)
 
-	const [date, setDate] = useState<Date | undefined>(undefined)
-	const [time, setTime] = useState<Date | undefined>(undefined)
+	const [title, setTitle] = useState<Note['title']>('')
+	const [content, setContent] = useState<Note['content']>('')
+	const [label, setLabel] = useState<Note['label']>(null)
+	const [due, setDue] = useState<Note['due']>(null)
 
-	const [showDatePicker, setShowDatePicker] = useState(false)
-	const [showTimePicker, setShowTimePicker] = useState(false)
+	function handleSaveNoteClick() {
+		if (!title.trim()) return
 
-	const handleBack = () => {
-		if (router.canGoBack()) {
-			router.back()
-		} else {
-			router.replace('/' as Href)
-		}
-	}
-
-	const onChangeDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
-		if (event.type === 'dismissed') {
-			setShowDatePicker(false)
-			return
-		}
-
-		const currentDate = selectedDate || date
-		setShowDatePicker(Platform.OS === 'ios')
-		setDate(currentDate)
-
-		if (Platform.OS === 'android') setShowDatePicker(false)
-	}
-
-	const onChangeTime = (event: DateTimePickerEvent, selectedTime?: Date) => {
-		if (event.type === 'dismissed') {
-			setShowTimePicker(false)
-			return
-		}
-
-		const currentTime = selectedTime || time
-		setShowTimePicker(Platform.OS === 'ios')
-		setTime(currentTime)
-		if (Platform.OS === 'android') setShowTimePicker(false)
-	}
-
-	const formatDate = (d: Date) => {
-		return d.toLocaleDateString('pt-PT', {
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric'
+		addNote({
+			title,
+			content,
+			label,
+			due
 		})
-	}
-
-	const formatTime = (t: Date) => {
-		return t.toLocaleTimeString('pt-PT', {
-			hour: '2-digit',
-			minute: '2-digit'
-		})
-	}
-
-	const handleSave = async () => {
-		if (!title.trim() && !content.trim()) return
-
-		setIsSubmitting(true)
-
-		try {
-			let finalDate: Date | null = null
-
-			if (date) {
-				finalDate = new Date(date)
-				if (time) {
-					finalDate.setHours(time.getHours())
-					finalDate.setMinutes(time.getMinutes())
-					finalDate.setSeconds(0)
-				}
-			}
-
-			await addNote({
-				title,
-				content,
-				label,
-				due: finalDate
-			})
-
-			handleBack()
-		} catch (error) {
-			console.error('Failed to create note:', error)
-		} finally {
-			setIsSubmitting(false)
-		}
+		setIsEditing(false)
+		router.push('/')
 	}
 
 	return (
-		<SafeAreaView style={styles.container} edges={['bottom']}>
+		<View style={styles.container}>
+			<View style={styles.header}>
+				<TextInput
+					editable={isEditing}
+					style={styles.title}
+					value={title ?? 'Title'}
+					onChangeText={setTitle}
+					placeholder='Title'
+					placeholderTextColor={theme.colors.border}
+				/>
+
+				<View style={styles.actions}>
+					<TouchableOpacity
+						style={styles.button}
+						onPress={() => setIsEditing(val => !val)}>
+						{isEditing ? (
+							<NewspaperIcon
+								weight='bold'
+								size={20}
+								color={theme.colors.text}
+							/>
+						) : (
+							<PencilIcon weight='bold' size={20} color={theme.colors.text} />
+						)}
+					</TouchableOpacity>
+
+					<TouchableOpacity
+						style={[styles.button, isLoading && { opacity: 0.5 }]}
+						onPress={handleSaveNoteClick}
+						disabled={isLoading}>
+						<FloppyDiskBackIcon
+							weight='fill'
+							size={20}
+							color={theme.colors.text}
+						/>
+					</TouchableOpacity>
+				</View>
+			</View>
+
+			<ScrollView
+				style={{ flexGrow: 0 }}
+				contentContainerStyle={{ alignItems: 'center' }}
+				horizontal
+				showsHorizontalScrollIndicator={false}>
+				<View style={styles.badgesRow}>
+					<LabelPicker
+						label={label}
+						setLabel={setLabel}
+						isEditing={isEditing}
+					/>
+					<DatePicker due={due} setDue={setDue} isEditing={isEditing} />
+					<TimePicker due={due} setDue={setDue} isEditing={isEditing} />
+				</View>
+			</ScrollView>
+
 			<KeyboardAvoidingView
 				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				style={styles.keyboardView}>
-				<View style={styles.header}>
-					<TouchableOpacity onPress={handleBack}>
-						<Text style={styles.cancelButton}>Cancel</Text>
-					</TouchableOpacity>
-					<Text style={styles.headerTitle}>New Note</Text>
-					<TouchableOpacity
-						onPress={handleSave}
-						disabled={isSubmitting || (!title.trim() && !content.trim())}>
-						<Text
-							style={[
-								styles.saveButton,
-								!title.trim() && !content.trim() && styles.disabledButton
-							]}>
-							Save
-						</Text>
-					</TouchableOpacity>
-				</View>
-
-				<View style={styles.content}>
-					<TextInput
-						style={styles.titleInput}
-						placeholder='Title'
-						placeholderTextColor={rgbOpacity(theme.colors.text, 0.8)}
-						value={title}
-						onChangeText={setTitle}
-						autoFocus
-					/>
-
-					<View style={styles.chipsRow}>
-						<View style={styles.chip}>
-							<TagIcon size={16} color={theme.colors.primary} weight='fill' />
-							<TextInput
-								value={label}
-								onChangeText={setLabel}
-								placeholder='Label'
-								placeholderTextColor={theme.colors.border}
-								style={styles.chipInput}
+				style={{ flex: 1 }}
+				keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}>
+				<ScrollView
+					style={{ flex: 1 }}
+					contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+					keyboardShouldPersistTaps='handled'>
+					{isEditing ? (
+						<TextInput
+							style={styles.input}
+							value={content}
+							onChangeText={setContent}
+							multiline={true}
+							textAlignVertical='top'
+							autoFocus={false}
+							scrollEnabled={false}
+						/>
+					) : (
+						<View style={styles.mdContainer}>
+							<Markdown
+								theme={markdownTheme}
+								markdown={content}
+								onLinkPress={url => Linking.openURL(url)}
 							/>
 						</View>
-
-						<TouchableOpacity
-							style={styles.chip}
-							onPress={() => setShowDatePicker(true)}>
-							<CalendarBlankIcon
-								size={16}
-								color={theme.colors.primary}
-								weight='fill'
-							/>
-							<Text style={styles.chipText}>
-								{date ? formatDate(date) : 'Add Date'}
-							</Text>
-						</TouchableOpacity>
-
-						<TouchableOpacity
-							style={styles.chip}
-							onPress={() => setShowTimePicker(true)}>
-							<ClockIcon size={16} color={theme.colors.primary} weight='fill' />
-							<Text style={styles.chipText}>
-								{time ? formatTime(time) : 'Add Time'}
-							</Text>
-						</TouchableOpacity>
-
-						{showDatePicker && (
-							<DateTimePicker
-								value={date || new Date()}
-								mode='date'
-								display='default'
-								onChange={onChangeDate}
-								themeVariant={theme.dark ? 'dark' : 'light'}
-							/>
-						)}
-						{showTimePicker && (
-							<DateTimePicker
-								value={time || new Date()}
-								mode='time'
-								display='default'
-								onChange={onChangeTime}
-								themeVariant={theme.dark ? 'dark' : 'light'}
-							/>
-						)}
-					</View>
-
-					<TextInput
-						style={styles.contentInput}
-						placeholder='Note'
-						placeholderTextColor={rgbOpacity(theme.colors.text, 0.8)}
-						value={content}
-						onChangeText={setContent}
-						multiline
-						textAlignVertical='top'
-					/>
-				</View>
+					)}
+				</ScrollView>
 			</KeyboardAvoidingView>
-		</SafeAreaView>
+		</View>
 	)
 }
 
@@ -221,77 +144,67 @@ const createStyles = (theme: Theme) => {
 	return StyleSheet.create({
 		container: {
 			flex: 1,
-			backgroundColor: theme.colors.background
-		},
-		keyboardView: {
-			flex: 1
+			backgroundColor: theme.colors.background,
+			padding: 12,
+			gap: 12
 		},
 		header: {
 			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			paddingHorizontal: 16,
-			paddingVertical: 12,
-			borderBottomWidth: 1,
-			borderBottomColor: theme.colors.border
-		},
-		headerTitle: {
-			fontSize: 17,
-			fontWeight: '600',
-			color: theme.colors.text
-		},
-		cancelButton: {
-			fontSize: 17,
-			color: theme.colors.primary
-		},
-		saveButton: {
-			fontSize: 17,
-			fontWeight: '600',
-			color: theme.colors.primary
-		},
-		disabledButton: {
-			opacity: 0.5
-		},
-		content: {
-			flex: 1,
-			padding: 16
-		},
-		titleInput: {
-			fontSize: 24,
-			fontWeight: 'bold',
-			color: theme.colors.text,
-			marginBottom: 8
-		},
-		chipsRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
 			gap: 12,
-			marginBottom: 16,
-			flexWrap: 'wrap'
+			justifyContent: 'space-between',
+			alignItems: 'center'
 		},
-		chip: {
+		title: {
+			color: theme.colors.text,
+			fontSize: 28,
+			fontWeight: 'bold'
+		},
+		badgesRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			gap: 6,
-			paddingVertical: 4,
-			borderRadius: 4
+			flexWrap: 'nowrap'
 		},
-		chipInput: {
-			color: theme.colors.primary,
-			fontSize: 14,
-			padding: 0,
-			minWidth: 50
+		actions: {
+			flexDirection: 'row',
+			gap: 8
 		},
-		chipText: {
-			color: theme.colors.primary,
-			fontSize: 14,
-			fontWeight: '600'
+		button: {
+			padding: 10,
+			backgroundColor: theme.colors.card,
+			borderWidth: 1,
+			borderColor: theme.colors.border,
+			borderRadius: 8,
+			alignItems: 'center',
+			justifyContent: 'center'
 		},
-		contentInput: {
-			flex: 1,
-			fontSize: 16,
+		input: {
 			color: theme.colors.text,
-			lineHeight: 24
+			fontSize: 18,
+			flex: 1,
+			textAlignVertical: 'top',
+			padding: 16,
+			minHeight: 300
+		},
+		mdContainer: {
+			flex: 1,
+			paddingHorizontal: 16,
+			paddingTop: 16
 		}
 	})
+}
+
+const mdTheme = (theme: Theme) => {
+	return {
+		...mdThemes.defaultTheme,
+		paragraph: {
+			color: theme.colors.text,
+			fontSize: 18,
+			lineHeight: 18 * 1.5
+		},
+		listItem: {
+			color: theme.colors.text,
+			fontSize: 18,
+			lineHeight: 18 * 1.5
+		}
+	}
 }

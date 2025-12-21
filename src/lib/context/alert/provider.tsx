@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import { AlertButton, CustomAlert } from '~/components/custom-alert'
+import { AlertButton, AlertPortal } from '~/components'
 
 type AlertContextType = {
 	showAlert: (title: string, message?: string, buttons?: AlertButton[]) => void
@@ -13,25 +13,25 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
 	const [message, setMessage] = useState<string | undefined>(undefined)
 	const [buttons, setButtons] = useState<AlertButton[]>([])
 
-	const showAlert = (
+	function showAlert(
 		title: string,
 		message?: string,
 		buttons: AlertButton[] = []
-	) => {
+	) {
 		setTitle(title)
 		setMessage(message)
 		setButtons(buttons)
 		setVisible(true)
 	}
 
-	const hideAlert = () => {
+	function hideAlert() {
 		setVisible(false)
 	}
 
 	return (
 		<AlertContext.Provider value={{ showAlert }}>
 			{children}
-			<CustomAlert
+			<AlertPortal
 				visible={visible}
 				title={title}
 				message={message}
@@ -42,7 +42,7 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
 	)
 }
 
-export const useAlert = () => {
+export function useAlert() {
 	const context = useContext(AlertContext)
 	if (!context) {
 		throw new Error('useAlert must be used within an AlertProvider')

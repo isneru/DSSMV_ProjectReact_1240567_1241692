@@ -4,15 +4,11 @@ import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { Calendar, LocaleConfig } from 'react-native-calendars'
 import { MarkingProps } from 'react-native-calendars/src/calendar/day/marking'
 import { NoteLink } from '~/components'
-import { calendarLocale } from '~/lib/calendar'
+import { calendarLocale, toDateString } from '~/lib/calendar'
 import { useNotes } from '~/lib/context/notes/provider'
 
 LocaleConfig.locales['en'] = calendarLocale
 LocaleConfig.defaultLocale = 'en'
-
-const toDateString = (date: Date) => {
-	return date.toISOString().split('T')[0]
-}
 
 export default function CalendarScreen() {
 	const theme = useTheme()

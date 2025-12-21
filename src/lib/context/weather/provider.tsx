@@ -27,7 +27,7 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
 	const [weather, setWeather] = useState<Weather>()
 	const [isLoading, setIsLoading] = useState(false)
 
-	const fetchWeather = async () => {
+	async function fetchWeather() {
 		setIsLoading(true)
 		let location: Location.LocationObject | null = null
 

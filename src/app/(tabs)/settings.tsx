@@ -18,7 +18,7 @@ export default function SettingsScreen() {
 		checkSupport()
 	}, [])
 
-	const checkSupport = async () => {
+	async function checkSupport() {
 		const hasHardware = await LocalAuthentication.hasHardwareAsync()
 		const isEnrolled = await LocalAuthentication.isEnrolledAsync()
 		setIsSupported(hasHardware && isEnrolled)
@@ -27,7 +27,7 @@ export default function SettingsScreen() {
 		setIsBiometricEnabled(enabled === 'true')
 	}
 
-	const toggleBiometric = async (value: boolean) => {
+	async function toggleBiometric(value: boolean) {
 		if (value) {
 			const result = await LocalAuthentication.authenticateAsync({
 				promptMessage: 'Enable Biometric Authentication',
