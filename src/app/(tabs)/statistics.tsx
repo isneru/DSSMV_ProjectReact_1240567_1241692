@@ -265,8 +265,7 @@ const createStyles = (theme: Theme) => {
 		sectionTitle: {
 			fontSize: 14,
 			fontWeight: '600',
-			color: theme.colors.text,
-			opacity: 0.6,
+			color: rgbOpacity(theme.colors.text, 0.6),
 			marginLeft: 4,
 			textTransform: 'uppercase'
 		},

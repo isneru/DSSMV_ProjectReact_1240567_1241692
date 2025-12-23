@@ -156,13 +156,15 @@ const createStyles = (theme: Theme) => {
 		},
 		title: {
 			color: theme.colors.text,
+			flex: 1,
 			fontSize: 28,
 			fontWeight: 'bold'
 		},
 		badgesRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			flexWrap: 'nowrap'
+			flexWrap: 'nowrap',
+			gap: 8
 		},
 		actions: {
 			flexDirection: 'row',

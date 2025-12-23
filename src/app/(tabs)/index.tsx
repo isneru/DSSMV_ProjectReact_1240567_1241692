@@ -4,6 +4,7 @@ import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { NoteLink, WeatherWidget, WeekRow } from '~/components'
 import { useAuth } from '~/lib/context/auth/provider'
 import { useNotes } from '~/lib/context/notes/provider'
+import { rgbOpacity } from '~/lib/theme'
 
 export default function Index() {
 	const theme = useTheme()
@@ -13,6 +14,7 @@ export default function Index() {
 
 	return (
 		<View style={styles.container}>
+			<Text style={styles.sectionTitle}>Home</Text>
 			<View style={styles.hero}>
 				<View style={styles.greet}>
 					<Text style={styles.textGreet}>Good Morning,</Text>
@@ -27,6 +29,7 @@ export default function Index() {
 				data={notes}
 				keyExtractor={item => item.id}
 				renderItem={({ item }) => <NoteLink note={item} />}
+				contentContainerStyle={{ gap: 8 }}
 				showsVerticalScrollIndicator={false}
 				refreshControl={
 					<RefreshControl
@@ -49,13 +52,19 @@ const createStyles = (theme: Theme) => {
 			padding: 12,
 			gap: 12
 		},
+		sectionTitle: {
+			fontSize: 14,
+			fontWeight: '600',
+			color: rgbOpacity(theme.colors.text, 0.6),
+			marginLeft: 4,
+			textTransform: 'uppercase'
+		},
 		hero: {
 			flexDirection: 'row',
 			justifyContent: 'space-between'
 		},
 		greet: {
-			paddingVertical: 8,
-			paddingHorizontal: 12
+			paddingVertical: 8
 		},
 		textGreet: {
 			color: theme.colors.text,

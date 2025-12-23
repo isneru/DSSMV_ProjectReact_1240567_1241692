@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store'
 import { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native'
 import { useAuth } from '~/lib/context/auth/provider'
+import { rgbOpacity } from '~/lib/theme'
 
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled'
 
@@ -98,8 +99,7 @@ const createStyles = (theme: Theme) => {
 		sectionTitle: {
 			fontSize: 14,
 			fontWeight: '600',
-			color: theme.colors.text,
-			opacity: 0.6,
+			color: rgbOpacity(theme.colors.text, 0.6),
 			marginLeft: 4,
 			textTransform: 'uppercase'
 		},

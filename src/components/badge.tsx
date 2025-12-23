@@ -1,13 +1,21 @@
 import { Theme, useTheme } from '@react-navigation/native'
 import { Icon as IconType } from 'phosphor-react-native'
 import React, { useMemo } from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import {
+	StyleProp,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
+	ViewStyle
+} from 'react-native'
 import { rgbOpacity } from '~/lib/theme'
 
 type BadgeProps = {
 	label: string
 	Icon?: IconType
 	onPress?: () => void
+	containerStyle?: StyleProp<ViewStyle>
 	disabled?: boolean
 }
 
@@ -15,6 +23,7 @@ export const Badge = ({
 	label,
 	Icon,
 	onPress,
+	containerStyle,
 	disabled = false
 }: BadgeProps) => {
 	const theme = useTheme()
@@ -29,8 +38,10 @@ export const Badge = ({
 				{
 					backgroundColor: disabled
 						? rgbOpacity(theme.colors.primary, 0.2)
-						: theme.colors.primary
-				}
+						: theme.colors.primary,
+					justifyContent: Icon ? 'flex-start' : 'center'
+				},
+				containerStyle
 			]}
 			onPress={onPress}
 			disabled={disabled}
@@ -66,8 +77,7 @@ const createStyles = (theme: Theme) => {
 			alignItems: 'center',
 			paddingVertical: 4,
 			paddingHorizontal: 8,
-			borderRadius: 999,
-			marginRight: 8
+			borderRadius: 999
 		},
 		disabled: {
 			opacity: 0.5
@@ -77,7 +87,8 @@ const createStyles = (theme: Theme) => {
 		},
 		text: {
 			fontSize: 14,
-			fontWeight: '500'
+			fontWeight: '500',
+			textAlign: 'center'
 		}
 	})
 }

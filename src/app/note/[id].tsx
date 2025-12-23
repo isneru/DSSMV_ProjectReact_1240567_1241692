@@ -183,12 +183,14 @@ const createStyles = (theme: Theme) => {
 		title: {
 			color: theme.colors.text,
 			fontSize: 28,
+			flex: 1,
 			fontWeight: 'bold'
 		},
 		badgesRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			flexWrap: 'nowrap'
+			flexWrap: 'nowrap',
+			gap: 8
 		},
 		actions: {
 			flexDirection: 'row',

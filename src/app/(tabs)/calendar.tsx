@@ -6,6 +6,7 @@ import { MarkingProps } from 'react-native-calendars/src/calendar/day/marking'
 import { NoteLink } from '~/components'
 import { calendarLocale, toDateString } from '~/lib/calendar'
 import { useNotes } from '~/lib/context/notes/provider'
+import { rgbOpacity } from '~/lib/theme'
 
 LocaleConfig.locales['en'] = calendarLocale
 LocaleConfig.defaultLocale = 'en'
@@ -74,23 +75,12 @@ export default function CalendarScreen() {
 			/>
 
 			<View style={styles.listContainer}>
-				<Text style={styles.headerText}>Tasks for {selectedDate}</Text>
+				<Text style={styles.sectionTitle}>Tasks for {selectedDate}</Text>
 				<FlatList
 					data={selectedNotes}
 					keyExtractor={item => item.id}
 					renderItem={({ item }) => <NoteLink note={item} />}
 					contentContainerStyle={{ gap: 8 }}
-					ListEmptyComponent={
-						<Text
-							style={{
-								color: theme.colors.text,
-								opacity: 0.5,
-								textAlign: 'center',
-								marginTop: 20
-							}}>
-							No tasks for this day.
-						</Text>
-					}
 				/>
 			</View>
 		</View>
@@ -107,8 +97,7 @@ const createStyles = (theme: Theme) => {
 		sectionTitle: {
 			fontSize: 14,
 			fontWeight: '600',
-			color: theme.colors.text,
-			opacity: 0.6,
+			color: rgbOpacity(theme.colors.text, 0.6),
 			marginLeft: 4,
 			textTransform: 'uppercase'
 		},
@@ -120,12 +109,6 @@ const createStyles = (theme: Theme) => {
 		listContainer: {
 			flex: 1,
 			gap: 8
-		},
-		headerText: {
-			fontSize: 18,
-			fontWeight: 'bold',
-			color: theme.colors.text,
-			marginBottom: 8
 		}
 	})
 }
