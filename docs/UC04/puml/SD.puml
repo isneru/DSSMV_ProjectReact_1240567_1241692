@@ -1,0 +1,42 @@
+@startuml SD
+autonumber
+
+actor "User" as User
+participant "NoteLink Component" as Main
+participant "Note Screen" as UI
+participant "NotesProvider" as Context
+participant "Database" as DB
+
+activate User
+User -> Main : trigger CTA to navigate\nto note screen
+activate Main
+Main -> UI : router.navigate({pathname:'/note/[id]',\n\t\t\tparams:{id:note.id }})
+deactivate Main
+activate UI
+UI --> User : render note screen
+deactivate UI
+
+User -> UI : update note data
+User -> UI : trigger CTA to save note
+activate UI
+
+UI -> Context : updateNote(id, data)
+activate Context
+
+Context -> Context : Find existing note by id
+Context -> Context : updatedNote = { ...currentNote, ...data }
+
+Context -> Context : dispatch("UPDATE_NOTE", { id, note: updatedNote })
+Context -> DB : saveNote(updatedNote, markAsDirty=true)
+activate DB
+DB --> Context : void
+deactivate DB
+Context --> UI : void
+deactivate Context
+UI -> Main : router.back()
+deactivate UI
+activate Main
+Main --> User : render previous screen\nwith updated note data
+deactivate Main
+
+@enduml

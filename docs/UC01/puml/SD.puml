@@ -1,0 +1,42 @@
+@startuml SD
+autonumber
+
+actor "User" as User
+participant "BiometricGate" as Gate
+participant "SecureStore" as Store
+participant "LocalAuth API" as API
+
+activate User
+User -> Gate : launch application
+
+activate Gate
+Gate -> Gate : mount (initial state: locked)
+Gate -> Gate : checkBiometricSettings()
+
+Gate -> Store : getItemAsync("biometric_enabled")
+activate Store
+Store --> Gate : true
+deactivate Store
+
+Gate -> API : hasHardwareAsync()
+activate API
+API --> Gate : true
+deactivate API
+
+Gate -> API : isEnrolledAsync()
+activate API
+API --> Gate : true
+deactivate API
+
+Gate -> Gate : authenticate()
+
+Gate -> API : authenticateAsync(...)
+activate API
+API --> Gate : { success: true }
+deactivate API
+
+Gate -> Gate : set state: unlocked
+Gate --> User : display main screen
+
+deactivate Gate
+@enduml

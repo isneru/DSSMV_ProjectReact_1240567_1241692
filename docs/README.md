@@ -1,15 +1,15 @@
-## [Domain Model](puml/DM.puml)
+## [Domain Model](global-artifacts/puml/DM.puml)
 
-![Domain Model](svg/DM.svg)
+![Domain Model](global-artifacts/svg/DM.svg)
 
-## [Use Case Diagram](puml/UCD.puml)
+## [Use Case Diagram](global-artifacts/puml/UCD.puml)
 
-![Use Case Diagram](svg/UCD.svg)
+![Use Case Diagram](global-artifacts/svg/UCD.svg)
 
-## [Deployment Diagram](puml/DD.puml)
+## [Deployment Diagram](global-artifacts/puml/DD.puml)
 
-![Deployment Diagram](svg/DD.svg)
+![Deployment Diagram](global-artifacts/svg/DD.svg)
 
-## [Package Diagram](puml/PD.puml)
+## [Package Diagram](global-artifacts/puml/PD.puml)
 
-![Package Diagram](svg/PD.svg)
+![Package Diagram](global-artifacts/svg/PD.svg)

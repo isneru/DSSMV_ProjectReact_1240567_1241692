@@ -1,0 +1,32 @@
+@startuml SD
+autonumber
+
+actor "User" as User
+participant "User Interface" as UI
+participant "NotesProvider" as Context
+participant "Database" as DB
+
+activate User
+User -> UI : Open App
+activate UI
+
+UI -> Context : useContext(NotesContext)
+activate Context
+
+Context -> DB : init()
+activate DB
+DB -> DB : CREATE TABLE IF NOT EXISTS...
+
+Context -> DB : getNotes()
+
+DB --> Context : notes: Note[]
+deactivate DB
+
+Context -> Context : dispatch("SET_NOTES")
+Context --> UI : return { notes }
+deactivate Context
+
+UI --> User : component with notes data re-renders
+deactivate UI
+
+@enduml 

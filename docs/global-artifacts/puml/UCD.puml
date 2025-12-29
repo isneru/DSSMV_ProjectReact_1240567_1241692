@@ -1,0 +1,38 @@
+@startuml Use Case Diagram
+left to right direction
+skinparam packageStyle rectangle
+
+actor "User" as user
+actor "Todoist API" as todoist
+actor "Weather API" as weather
+
+rectangle "Tick it" {
+    usecase "UC01 - Unlock Application" as UC01
+    usecase "UC02 - View Notes" as UC02
+    usecase "UC03 - Create Note" as UC03
+    usecase "UC04 - Edit Note" as UC04
+    usecase "UC05 - Delete Note" as UC05
+    usecase "UC06 - Log into Todoist" as UC06
+    usecase "UC07 - Log out" as UC07
+    usecase "UC08 - View Weather" as UC08
+    usecase "UC09 - Sync Data" as UC09
+}
+
+user --> UC06
+user --> UC07
+user --> UC01
+user --> UC02
+user --> UC03
+user --> UC04
+user --> UC05
+user --> UC08
+
+UC03 ..> UC09 : <<include>> \n(when online)
+UC04 ..> UC09 : <<include>> \n(when online)
+UC05 ..> UC09 : <<include>> \n(when online)
+
+UC06 <-- todoist : Authenticates User
+UC08 <--- weather : Fetches Weather Info
+UC09 <-- todoist : Syncs Notes
+
+@enduml

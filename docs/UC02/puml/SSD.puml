@@ -1,0 +1,15 @@
+@startuml SSD
+actor "User" as User
+participant "System" as System
+autonumber
+
+activate User
+User -> System : trigger fetch notes action
+
+activate System
+System -> System : fetch notes
+System --> User : shows notes
+
+deactivate System
+
+@enduml

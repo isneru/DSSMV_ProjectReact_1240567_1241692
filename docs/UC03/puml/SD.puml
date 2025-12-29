@@ -1,0 +1,44 @@
+@startuml SD
+autonumber
+
+actor "User" as User
+participant "Main Screen" as Home
+participant "NewNote Screen" as UI
+participant "NotesProvider" as Context
+participant "Database" as DB
+
+activate User
+User -> Home : trigger CTA to add note
+activate Home
+Home -> UI : router.push('/note/new')
+deactivate Home
+activate UI
+UI --> User : render new note screen
+deactivate UI
+
+User -> UI : enter note data
+User -> UI : trigger CTA to save note
+activate UI
+
+UI -> Context : addNote(data)
+activate Context
+
+Context -> Context : generate UUID for note id
+Context -> Context : create newNote object\n(userId='local', isSynced=false, ...data)
+
+Context -> DB : saveNote(newNote, markAsDirty=true)
+activate DB
+DB -> DB : INSERT INTO notes...
+DB --> Context : void
+deactivate DB
+
+Context -> Context : dispatch("ADD_NOTE", newNote)
+Context --> UI : void
+deactivate Context
+UI -> Home : router.back()
+deactivate UI
+activate Home
+Home --> User : render home screen\nwith updated notes list
+deactivate Home
+
+@enduml

@@ -1,0 +1,20 @@
+@startuml SSD
+autonumber
+
+actor "User" as User
+participant "System" as System
+
+activate User
+User -> System : asks to create a new note
+activate System
+System --> User : requests note data
+deactivate System
+
+User -> System : inputs note data and submits
+activate System
+System -> System : save note
+
+System --> User : confirms note creation
+
+deactivate System
+@enduml

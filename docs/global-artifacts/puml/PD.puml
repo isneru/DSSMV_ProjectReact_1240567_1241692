@@ -1,0 +1,76 @@
+@startuml Package Diagram
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 120
+
+package "src" {
+    package "app" as App {
+        [Layout Wrappers]
+        [Screens]
+    }
+
+    package "components" as Components {
+        [UI Widgets]
+    }
+
+    package "assets" as Assets {
+        [Icons & Splash]
+    }
+
+    package "lib" {
+        rectangle "Root Utilities" as LibRoot {
+            file "theme" as Theme
+            file "calendar" as Calendar
+            file "db" as Database
+        }
+
+        package "types" as SharedTypes {
+            file "index"
+            file "notes"
+            file "session"
+            file "weather"
+        }
+
+        package "context" as Context {
+            [Auth]
+            [Notes]
+            [Weather]
+            [Alert]
+        }
+
+        package "services" as Services {
+            package "todoist" as TodoistService {
+                component "index" as TodoistIndex
+                component "mappers"
+                component "types"
+            }
+        }
+        
+        package "axios" as Network {
+            component "todoist-client" as TodoistClient
+            component "weather-client" as WeatherClient
+        }
+    }
+}
+
+App ..> Components : imports
+App ..> Context : providers
+App ..> Theme : applies
+App ..> Assets : includes
+
+Components ..> Context : consumes
+Components ..> Calendar : uses
+Components ..> Theme : uses
+Components ..> SharedTypes : uses
+
+Notes ..> TodoistIndex : syncs
+Notes ..> Database : persists
+
+Auth ..> TodoistClient : auth
+Weather ..> WeatherClient : fetches
+
+TodoistIndex ..> TodoistClient : HTTP(S)
+TodoistIndex ..> mappers
+TodoistIndex ..> types
+
+@enduml

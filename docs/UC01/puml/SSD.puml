@@ -1,0 +1,18 @@
+@startuml SSD
+autonumber
+
+actor "User" as User
+participant "System" as System
+
+activate User
+User -> System : Launch Application
+activate System
+System -> System : Check Security Configuration
+System --> User : Request Authentication
+deactivate System
+
+User -> System : Authenticate via Biometrics
+activate System
+System --> User : Display Main Screen
+deactivate System
+@enduml
