@@ -10,8 +10,8 @@ import {
 import { useAuth } from '~/lib/context/auth/provider'
 import { INITIAL_STATE, notesReducer } from '~/lib/context/notes/reducer'
 import * as DB from '~/lib/db'
+import { TodoistService } from '~/lib/services/todoist'
 import type { Note } from '~/lib/types'
-import { TodoistService } from '~/services/todoist'
 
 type NotesProviderProps = {
 	children: ReactNode
