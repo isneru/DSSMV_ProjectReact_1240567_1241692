@@ -1,4 +1,8 @@
-import { CreateTodoistTaskDTO, Note, TodoistTaskDTO } from '~/lib/types'
+import {
+	CreateTodoistTaskDTO,
+	TodoistTaskDTO
+} from '~/lib/services/todoist/types'
+import { Note } from '~/lib/types'
 
 export function fromTodoistToDomain(task: TodoistTaskDTO): Note {
 	return {
@@ -18,28 +22,5 @@ export function fromDomainToTodoist(note: Partial<Note>): CreateTodoistTaskDTO {
 		description: note.content ?? '',
 		due_date: note.due ? note.due.toISOString() : null,
 		labels: note.label ? [note.label] : []
-	}
-}
-
-export function fromDBToDomain(row: any): Note {
-	return {
-		id: row.id,
-		userId: row.userId,
-		title: row.title,
-		content: row.content,
-		label: row.label,
-		due: row.due ? new Date(row.due) : null,
-		isSynced: row.userId !== 'local'
-	}
-}
-
-export function fromDomainToDB(note: Note) {
-	return {
-		id: note.id,
-		userId: note.userId,
-		title: note.title,
-		content: note.content,
-		label: note.label,
-		due: note.due ? note.due.toISOString() : null
 	}
 }

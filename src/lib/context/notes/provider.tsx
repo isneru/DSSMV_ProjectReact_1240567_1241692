@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { useAuth } from '~/lib/context/auth/provider'
 import { INITIAL_STATE, notesReducer } from '~/lib/context/notes/reducer'
-import * as DB from '~/lib/db'
+import * as db from '~/lib/db'
 import { TodoistService } from '~/lib/services/todoist'
 import type { Note } from '~/lib/types'
 
@@ -40,8 +40,8 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	const isOnline = status === 'authenticated' && !!session?.accessToken
 
 	useEffect(() => {
-		DB.init()
-		const localNotes = DB.getNotes()
+		db.init()
+		const localNotes = db.getNotes()
 		dispatch({ type: 'SET_NOTES', payload: localNotes })
 	}, [])
 
@@ -49,38 +49,44 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 		if (!isOnline) return
 
 		try {
-			const pendingDeletions = DB.getPendingDeletions()
+			dispatch({ type: 'SET_LOADING', payload: true })
+			const pendingDeletions = db.getPendingDeletions()
 			for (const id of pendingDeletions) {
 				await TodoistService.deleteTask(id)
 					.catch(() => {})
-					.finally(() => DB.removePendingDeletion(id))
+					.finally(() => db.removePendingDeletion(id))
 			}
 
-			const dirtyNotes = DB.getNotes().filter(n => !n.isSynced)
+			const dirtyNotes = db.getNotes().filter(n => !n.isSynced)
 
 			for (const note of dirtyNotes) {
 				try {
+					dispatch({ type: 'SET_LOADING', payload: true })
 					if (note.userId === 'local') {
 						const remoteNote = await TodoistService.createTask(note)
-						DB.deleteNote(note.id)
-						DB.saveNote(remoteNote, false)
+						db.deleteNote(note.id)
+						db.saveNote(remoteNote, false)
 					} else {
 						const remoteNote = await TodoistService.updateTask(note.id, note)
-						DB.saveNote(remoteNote, false)
+						db.saveNote(remoteNote, false)
 					}
 				} catch (error) {
 					console.error('Failed to push note', note.id, error)
+				} finally {
+					dispatch({ type: 'SET_LOADING', payload: false })
 				}
 			}
 
 			const remoteNotes = await TodoistService.fetchTasks()
 
-			DB.clearNotes()
-			remoteNotes.forEach(note => DB.saveNote(note, false))
+			db.clearNotes()
+			remoteNotes.forEach(note => db.saveNote(note, false))
 
-			dispatch({ type: 'SET_NOTES', payload: DB.getNotes() })
+			dispatch({ type: 'SET_NOTES', payload: db.getNotes() })
 		} catch (e) {
 			console.error('Sync Error', e)
+		} finally {
+			dispatch({ type: 'SET_LOADING', payload: false })
 		}
 	}, [isOnline])
 
@@ -103,7 +109,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			}
 
 			dispatch({ type: 'ADD_NOTE', payload: newNote })
-			DB.saveNote(newNote, true)
+			db.saveNote(newNote, true)
 
 			if (isOnline) runBackgroundSync()
 		},
@@ -118,7 +124,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			const updatedNote = { ...currentNote, ...data }
 
 			dispatch({ type: 'UPDATE_NOTE', payload: { id, note: updatedNote } })
-			DB.saveNote(updatedNote, true)
+			db.saveNote(updatedNote, true)
 
 			if (isOnline) runBackgroundSync()
 		},
@@ -128,8 +134,8 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 	const deleteNote = useCallback(
 		(id: string) => {
 			dispatch({ type: 'DELETE_NOTE', payload: id })
-			DB.deleteNote(id)
-			DB.addPendingDeletion(id)
+			db.deleteNote(id)
+			db.addPendingDeletion(id)
 
 			if (isOnline) runBackgroundSync()
 		},

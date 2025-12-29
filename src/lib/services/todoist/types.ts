@@ -1,3 +1,24 @@
+export type TodoistTaskDTO = {
+	id: string
+	content: string
+	description: string
+	labels: string[]
+	user_id: string
+	due: {
+		date: string
+		string: string
+		lang: string
+		is_recurring: boolean
+	} | null
+}
+
+export type CreateTodoistTaskDTO = {
+	content: string
+	description?: string
+	due_date?: string | null
+	labels?: string[]
+}
+
 export type TodoistStatistics = {
 	completed_count: number
 	days_items: DaysItem[]

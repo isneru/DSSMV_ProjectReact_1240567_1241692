@@ -5,8 +5,8 @@ import { StyleSheet, Text, View } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
 import api from '~/lib/axios/todoist-client'
 import { useAuth } from '~/lib/context/auth/provider'
+import { TodoistStatistics } from '~/lib/services/todoist/types'
 import { rgbOpacity } from '~/lib/theme'
-import { TodoistStatistics } from '~/lib/types/services'
 
 export default function StatsScreen() {
 	const theme = useTheme()
