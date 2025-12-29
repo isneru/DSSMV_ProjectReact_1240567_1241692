@@ -1,0 +1,33 @@
+@startuml Domain Model
+hide circle
+hide methods
+
+class User {
+    id
+    name
+    email
+}
+
+class Session {
+    accessToken
+    expires
+}
+
+class Note {
+    id
+    title
+    content
+    label
+    due
+}
+
+class Weather {
+    city
+    temperature
+    condition
+}
+
+Session "0..1" -- "1" User : holds data of >
+User "1" -- "*" Note : owns >
+
+@enduml
