@@ -4,57 +4,24 @@ autonumber
 actor "User" as User
 participant "Settings Screen" as UI
 participant "AuthProvider" as Context
-participant "TodoistClient" as Client
-participant "Todoist API" as API
 participant "SecureStore" as Store
 
 activate User
-User -> UI : press "Login with Todoist" button
+User -> UI : clicks logout button
 activate UI
-UI -> Context : login()
-deactivate UI
+UI -> Context : logout()
 activate Context
 
-Context -> Context : prompts authentication session
-Context --> User : redirects user to oauth webpage
-deactivate Context
-
-User -> API : enters credentials and authorizes app
-activate API
-API --> Context : redirects back with authorization code
-deactivate API
-activate Context
-
-Context -> Context : exchanges code for token
-
-Context -> Client : post(token_endpoint, code)
-activate Client
-Client -> API : requests access token
-activate API
-API --> Client : returns access token
-deactivate API
-Client --> Context : returns token data
-deactivate Client
-
-Context -> Client : get(user_endpoint)
-activate Client
-Client -> API : requests user profile
-activate API
-API --> Client : returns user profile
-deactivate API
-Client --> Context : returns user data
-deactivate Client
-
-Context -> Store : save session data
+Context -> Store : deleteItemAsync(session_key)
 activate Store
 Store --> Context : void
 deactivate Store
 
-Context -> Context : dispatch("SIGN_IN")
-Context --> UI : updates authentication state
+Context -> Context : dispatch("SIGN_OUT")
+Context --> UI : updates state (unauthenticated)
 deactivate Context
 
-UI --> User : displays user profile (logged in)
+UI --> User : renders "login with todoist" button
 deactivate UI
-
+deactivate User
 @enduml

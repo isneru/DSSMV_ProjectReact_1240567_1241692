@@ -16,17 +16,14 @@ Link -> AlertCtx : showAlert("Confirm delete",\nbuttons=[{onPress: deleteNote}])
 activate AlertCtx
 note right of AlertCtx : showAlert sets visible to true,\nwhich renders the alert dialog
 AlertCtx -> Portal : render(visible=true)
-deactivate AlertCtx
 activate Portal
 Portal --> User : display dialog overlay
 deactivate Portal
-deactivate AlertCtx
 
 User -> Portal : press "Delete" button
 activate Portal
 
 Portal -> NotesCtx : deleteNote(id)
-deactivate Portal
 activate NotesCtx
 
 NotesCtx -> DB : addPendingDeletion(id)
@@ -42,16 +39,14 @@ deactivate DB
 NotesCtx -> NotesCtx : dispatch("DELETE_NOTE", id)
 NotesCtx --> Portal : void
 deactivate NotesCtx
-activate Portal
 Portal -> Portal : onClose()
 Portal --> AlertCtx : void
 deactivate Portal
-activate AlertCtx
 AlertCtx --> Link : void
 deactivate AlertCtx
 
-deactivate Link
 
 Link --> User : is removed from the UI\nas it no longer exists
+deactivate Link
 
 @enduml

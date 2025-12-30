@@ -11,13 +11,11 @@ activate User
 User -> Main : trigger CTA to navigate\nto note screen
 activate Main
 Main -> UI : router.navigate({pathname:'/note/[id]',\n\t\t\tparams:{id:note.id }})
-deactivate Main
 activate UI
 UI --> User : render note screen
 deactivate UI
 
-User -> UI : update note data
-User -> UI : trigger CTA to save note
+User -> UI : update note data and\ntrigger CTA to save note
 activate UI
 
 UI -> Context : updateNote(id, data)
@@ -35,7 +33,6 @@ Context --> UI : void
 deactivate Context
 UI -> Main : router.back()
 deactivate UI
-activate Main
 Main --> User : render previous screen\nwith updated note data
 deactivate Main
 

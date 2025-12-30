@@ -12,20 +12,17 @@ activate User
 User -> UI : press "Login with Todoist" button
 activate UI
 UI -> Context : login()
-deactivate UI
 activate Context
 
 Context -> Context : prompts authentication session
-Context --> User : redirects user to oauth webpage
+Context --> User : redirects user\nto oauth webpage
 deactivate Context
 
-User -> API : enters credentials and authorizes app
+User -> API : enters credentials\nand authorizes app
 activate API
 API --> Context : redirects back with authorization code
 deactivate API
 activate Context
-
-Context -> Context : exchanges code for token
 
 Context -> Client : post(token_endpoint, code)
 activate Client

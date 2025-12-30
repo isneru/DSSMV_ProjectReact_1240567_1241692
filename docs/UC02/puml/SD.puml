@@ -16,9 +16,11 @@ activate Context
 Context -> DB : init()
 activate DB
 DB -> DB : CREATE TABLE IF NOT EXISTS...
+DB --> Context : void
+deactivate DB
 
 Context -> DB : getNotes()
-
+activate DB
 DB --> Context : notes: Note[]
 deactivate DB
 
