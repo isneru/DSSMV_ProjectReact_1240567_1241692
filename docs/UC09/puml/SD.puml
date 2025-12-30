@@ -1,0 +1,111 @@
+@startuml SD
+autonumber
+
+actor "User" as User
+participant "NotesProvider" as Context
+participant "Database" as DB
+participant "TodoistService" as Service
+participant "Todoist API" as API
+
+activate User
+User -> Context : automatic or manual sync request
+activate Context
+
+Context -> Context : dispatch("SET_LOADING", true)
+
+Context -> DB : getPendingDeletions()
+activate DB
+DB --> Context : [id1, id2...]
+deactivate DB
+
+loop for each pending deletion
+    Context -> Service : deleteNote(id)
+    activate Service
+    Service -> API : DELETE /tasks/:id
+    activate API
+    API --> Service : 204 No Content
+    deactivate API
+    Service --> Context : success
+    deactivate Service
+
+    Context -> DB : removePendingDeletion(id)
+    activate DB
+    DB --> Context : void
+    deactivate DB
+end
+
+Context -> DB : getNotes()
+activate DB
+DB --> Context : notes: Note[]
+deactivate DB
+Context -> Context : filter notes where isSynced = false
+
+loop for each dirty note
+    alt is new note (userId == 'local')
+        Context -> Service : createNote(note)
+        activate Service
+        Service -> API : POST /tasks
+        activate API
+        API --> Service : remote note JSON
+        deactivate API
+        Service --> Context : remoteNote
+        deactivate Service
+
+        Context -> DB : deleteNote(localId)
+        activate DB
+        DB --> Context : void
+        deactivate DB
+        Context -> DB : saveNote(remoteNote)
+        activate DB
+        DB --> Context : void
+        deactivate DB
+    else is not new note (userId != 'local')
+        Context -> Service : updateNote(id, note)
+        activate Service
+        Service -> API : POST /tasks/:id
+        activate API
+        API --> Service : updated note JSON
+        deactivate API
+        Service --> Context : remoteNote
+        deactivate Service
+
+        Context -> DB : saveNote(remoteNote)
+        activate DB
+        DB --> Context : void
+        deactivate DB
+    end
+end
+
+Context -> Service : fetchNotes()
+activate Service
+Service -> API : GET /tasks
+activate API
+API --> Service : notes JSON
+deactivate API
+Service --> Context : notes: Note[]
+deactivate Service
+
+Context -> DB : clearNotes()
+activate DB
+DB --> Context : void
+deactivate DB
+
+loop for each fetched note
+    Context -> DB : saveNote(note)
+    activate DB
+    DB --> Context : void
+    deactivate DB
+end
+
+Context -> DB : getNotes()
+activate DB
+DB --> Context : final note list
+deactivate DB
+
+Context -> Context : dispatch("SET_NOTES")
+Context -> Context : dispatch("SET_LOADING", false)
+
+Context --> User : updates user interface with latest data
+deactivate Context
+deactivate User
+@enduml

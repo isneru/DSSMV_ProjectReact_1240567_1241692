@@ -52,7 +52,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 			dispatch({ type: 'SET_LOADING', payload: true })
 			const pendingDeletions = db.getPendingDeletions()
 			for (const id of pendingDeletions) {
-				await TodoistService.deleteTask(id)
+				await TodoistService.deleteNote(id)
 					.catch(() => {})
 					.finally(() => db.removePendingDeletion(id))
 			}
@@ -63,11 +63,11 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				try {
 					dispatch({ type: 'SET_LOADING', payload: true })
 					if (note.userId === 'local') {
-						const remoteNote = await TodoistService.createTask(note)
+						const remoteNote = await TodoistService.createNote(note)
 						db.deleteNote(note.id)
 						db.saveNote(remoteNote, false)
 					} else {
-						const remoteNote = await TodoistService.updateTask(note.id, note)
+						const remoteNote = await TodoistService.updateNote(note.id, note)
 						db.saveNote(remoteNote, false)
 					}
 				} catch (error) {
@@ -77,7 +77,7 @@ export const NotesProvider = ({ children }: NotesProviderProps) => {
 				}
 			}
 
-			const remoteNotes = await TodoistService.fetchTasks()
+			const remoteNotes = await TodoistService.fetchNotes()
 
 			db.clearNotes()
 			remoteNotes.forEach(note => db.saveNote(note, false))

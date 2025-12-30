@@ -1,0 +1,18 @@
+@startuml SSD
+autonumber
+
+actor "User" as User
+participant "System" as System
+
+activate User
+User -> System : asks the system to delete a note
+activate System
+System --> User : prompt for confirmation
+deactivate System
+User -> System : confirm deletion
+activate System
+System -> System : delete note
+System --> User : confirms note deletion
+deactivate System
+
+@enduml

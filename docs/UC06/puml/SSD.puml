@@ -1,0 +1,24 @@
+@startuml SSD
+autonumber
+
+actor "User" as User
+participant "System" as System
+actor "Todoist API" as API
+
+activate User
+User -> System : asks to log in with Todoist
+activate System
+System --> User : redirects the user to Todoist's OAuth webpage
+deactivate System
+
+User -> API : enter credentials and authorizes app
+activate API
+API --> System : redirects back with authorization code
+deactivate API
+activate System
+System -> System : exchange code for token
+System -> System : fetch user profile
+System -> System : store session data
+System --> User : displays authentication state (logged in)
+deactivate System
+@enduml

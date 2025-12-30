@@ -1,0 +1,23 @@
+@startuml SSD
+autonumber
+
+actor "User" as User
+participant "System" as System
+actor "Weather API" as API
+
+activate User
+User -> System : requests weather info
+activate System
+
+System -> System : checks location permissions
+System -> System : retrieves current location
+
+System -> API : requests weather data with coordinates
+activate API
+API --> System : returns weather data
+deactivate API
+
+System --> User : displays current weather info
+deactivate System
+deactivate User
+@enduml

@@ -1,0 +1,36 @@
+@startuml SSD
+autonumber
+
+actor "User" as User
+participant "System" as System
+actor "Todoist API" as API
+
+activate User
+User -> System : requests sync (or system auto-triggers)
+activate System
+
+System -> System : retrieves pending local changes
+loop for each pending deletion
+    System -> API : requests deletion
+    activate API
+    API --> System : confirms deletion
+    deactivate API
+end
+
+loop for each new or modified note
+    System -> API : pushes note data
+    activate API
+    API --> System : returns synced note object
+    deactivate API
+    System -> System : updates local record
+end
+
+System -> API : requests all notes
+activate API
+API --> System : returns latest note list
+deactivate API
+
+System -> System : updates local database
+System --> User : displays updated data
+deactivate System
+@enduml

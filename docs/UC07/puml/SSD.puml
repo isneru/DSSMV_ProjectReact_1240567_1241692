@@ -1,0 +1,14 @@
+@startuml SSD
+autonumber
+
+actor "User" as User
+participant "System" as System
+
+activate User
+User -> System : asks system to logout
+activate System
+System -> System : clears local session data
+System --> User : displays authentication state (logged out)
+deactivate System
+deactivate User
+@enduml

@@ -1,0 +1,52 @@
+@startuml SD
+autonumber
+
+actor "User" as User
+participant "Home Screen" as UI
+participant "WeatherWidget Component" as Widget
+participant "WeatherProvider" as Context
+participant "Expo Location" as Location
+participant "WeatherClient" as Client
+participant "OpenWeather API" as API
+
+activate User
+User -> UI : opens home screen
+activate UI
+UI -> Widget : mounts component
+activate Widget
+
+Widget -> Context : useWeather()
+activate Context
+
+Context -> Location : requestForegroundPermissionsAsync()
+activate Location
+Location --> Context : status: granted
+deactivate Location
+
+Context -> Location : getCurrentPositionAsync()
+activate Location
+Location --> Context : { latitude, longitude }
+deactivate Location
+
+Context -> Client : get('/weather', { lat, lon })
+activate Client
+Client -> API : GET /data/2.5/weather
+activate API
+API --> Client : weather JSON response
+deactivate API
+Client --> Context : data
+deactivate Client
+
+Context -> Context : setWeather(data)
+Context --> Widget : weather
+deactivate Context
+
+Widget -> Widget : re-render with\nupdated weather data
+
+Widget --> UI : render content
+deactivate Widget
+
+UI --> User : displays current weather info
+deactivate UI
+deactivate User
+@enduml
