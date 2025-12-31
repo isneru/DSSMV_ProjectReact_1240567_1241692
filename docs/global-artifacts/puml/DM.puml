@@ -1,4 +1,5 @@
 @startuml Domain Model
+left to right direction
 hide circle
 hide methods
 

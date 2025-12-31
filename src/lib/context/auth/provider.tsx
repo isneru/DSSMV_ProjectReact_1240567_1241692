@@ -23,6 +23,11 @@ const endpoints = {
 	user: 'user'
 }
 
+const redirectURI = makeRedirectUri({
+	scheme: 'tickit',
+	path: 'auth/callback'
+})
+
 type AuthProviderProps = {
 	children: ReactNode
 }
@@ -56,9 +61,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		{
 			clientId: process.env.EXPO_PUBLIC_TODOIST_CLIENT_ID!,
 			scopes: ['data:read_write'],
-			redirectUri: makeRedirectUri({
-				scheme: 'tickitrevamped'
-			}),
+			redirectUri: redirectURI,
 			responseType: ResponseType.Code
 		},
 		{
@@ -100,7 +103,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						client_id: process.env.EXPO_PUBLIC_TODOIST_CLIENT_ID!,
 						client_secret: process.env.EXPO_PUBLIC_TODOIST_CLIENT_SECRET!,
 						code,
-						redirect_uri: makeRedirectUri({ scheme: 'tickitrevamped' })
+						redirect_uri: redirectURI
 					}).toString(),
 					{
 						headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
